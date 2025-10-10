@@ -84,6 +84,8 @@ if test -n "$git_email"
 end
 
 echo
+# Setting automatically to auto setup a new branch
+git config --global push.autoSetupRemote true
 echo "✅ Git user configuration updated:"
 git config --global --list | grep 'user\.'
 

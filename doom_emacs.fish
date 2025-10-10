@@ -1,15 +1,16 @@
 #!/usr/bin/env fish
-# === doom_emacs.fish ===
-# Purpose: Install Doom Emacs safely on CachyOS (or any Arch-based Linux)
+# === doom_emacs_full.fish ===
+# Purpose: Full Doom Emacs setup on CachyOS (Arch Linux)
+# Includes: backup, install Doom, Markdown, ShellCheck
 # Author: theoneandonlywoj
 
-echo "🧠 Starting Doom Emacs setup..."
+echo "🧠 Starting Doom Emacs full setup..."
 
 # === 1. Backup existing ~/.emacs.d if it exists ===
 if test -d ~/.emacs.d
     set timestamp (date "+%Y_%m_%d_%H_%M_%S")
     set backup_dir ~/.emacs.d.backup_$timestamp
-    echo "⚠️  Existing ~/.emacs.d found. Backing up to $backup_dir..."
+    echo "⚠ Existing ~/.emacs.d found. Backing up to $backup_dir..."
     mv ~/.emacs.d $backup_dir
     if test $status -ne 0
         echo "❌ Failed to move ~/.emacs.d. Aborting."
@@ -25,7 +26,7 @@ if test $status -ne 0
     exit 1
 end
 
-# === 3. Ensure the Doom script is executable ===
+# === 3. Make doom script executable ===
 chmod +x ~/.emacs.d/bin/doom
 if test $status -ne 0
     echo "❌ Failed to make doom script executable. Aborting."
@@ -40,33 +41,48 @@ else
     mkdir -p ~/.doom.d
 end
 
-# === 5. Run Doom Emacs installer ===
-echo "⚙️ Running Doom Emacs installer..."
+# === 5. Run Doom installer ===
+echo "⚙ Running Doom Emacs installer..."
 ~/.emacs.d/bin/doom install
 if test $status -ne 0
     echo "❌ Doom installer failed."
     exit 1
 end
 
-# === 6. Add Doom to PATH for Fish shell ===
+# === 6. Add Doom to PATH ===
 set -U fish_user_paths $HOME/.emacs.d/bin $fish_user_paths
 echo "✅ Doom Emacs installed and added to PATH."
 
-# === 7. Automatically run doom sync ===
-echo "🔄 Running 'doom sync' to install packages and compile configs..."
+# === 7. Doom sync ===
+echo "🔄 Running 'doom sync'..."
 doom sync
 if test $status -ne 0
-    echo "❌ Doom sync failed. Please try running manually: doom sync"
+    echo "❌ Doom sync failed. Please run manually."
 else
     echo "✅ Doom sync completed successfully."
 end
 
-echo
-# Markdown and Shellcheck
+# === 8. Install Markdown CLI and ShellCheck ===
+echo "📚 Installing Markdown CLI and ShellCheck..."
 sudo pacman -S --noconfirm python-markdown shellcheck
-# Markdown symlink to markdown_py
-sudo ln -s /usr/bin/markdown_py /usr/local/bin/markdown
-echo "🚀 Doom Emacs is ready to use!"
+
+# Symlink markdown_py → markdown
+if not test -f /usr/local/bin/markdown
+    sudo ln -s /usr/bin/markdown_py /usr/local/bin/markdown
+    echo "🔗 Created symlink: /usr/local/bin/markdown → /usr/bin/markdown_py"
+end
+
+# === 9. Reminder for Nerd Fonts ===
+echo
+echo "🎨 Nerd Fonts installation is not automated in this script."
+echo "   To remove Doom doctor warnings about missing fonts, please:"
+echo "   1. Open Doom Emacs: emacs"
+echo "   2. Run: M-x nerd-icons-install-fonts"
+echo "   3. Restart Emacs after installation"
+echo "💡 This will install the necessary Nerd Fonts for icons and UI."
+
+echo
+echo "🚀 Doom Emacs setup complete!"
 echo "📚 Your existing configuration in ~/.doom.d has been preserved."
-echo "📦 Your previous ~/.emacs.d backup is located at: $backup_dir"
+echo "📦 Backup of previous ~/.emacs.d: $backup_dir"
 

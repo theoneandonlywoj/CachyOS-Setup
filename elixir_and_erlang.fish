@@ -36,6 +36,7 @@ end
 # === 4. Install Erlang via Mise ===
 echo "🔧 Installing Erlang $ERLANG_VERSION via Mise..."
 mise install erlang@$ERLANG_VERSION
+mise use -g erlang@$ERLANG_VERSION 
 if test $status -ne 0
     echo "❌ Erlang installation failed. Aborting."
     exit 1
@@ -44,20 +45,17 @@ end
 # === 5. Install Elixir via Mise ===
 echo "🔧 Installing Elixir $ELIXIR_VERSION via Mise..."
 mise install elixir@$ELIXIR_VERSION
+mise use -g elixir@$ELIXIR_VERSION
 if test $status -ne 0
     echo "❌ Elixir installation failed. Aborting."
     exit 1
 end
 
-# === 6. Activate installed versions in current shell for the script ===
-mise use erlang@$ERLANG_VERSION
-mise use elixir@$ELIXIR_VERSION
-
 # Reload PATH again to be safe
 set -x PATH ~/.local/share/mise/shims $PATH
 mise activate fish | source
 
-# === 7. Add automatic activation to Fish config if not already present ===
+# === 6. Add automatic activation to Fish config if not already present ===
 set fish_config_file ~/.config/fish/config.fish
 set activation_line "mise activate fish | source"
 
@@ -66,7 +64,7 @@ if not grep -Fxq "$activation_line" $fish_config_file
     echo "🔧 Added automatic Mise activation to $fish_config_file"
 end
 
-# === 8. Verify installations ===
+# === 7. Verify installations ===
 echo "🧪 Verifying installations..."
 set erlang_version (command erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().' -noshell 2>/dev/null)
 set elixir_version (command elixir -v 2>/dev/null | grep "Elixir" | awk '{print $2}')

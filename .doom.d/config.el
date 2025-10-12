@@ -6,8 +6,8 @@
 
 ;; Some functionality uses this to identify you, e.g. GPG configuration, email
 ;; clients, file templates and snippets. It is optional.
-;; (setq user-full-name "John Doe"
-;;       user-mail-address "john@doe.com")
+(setq user-full-name "Wojciech Orzechowski"
+      user-mail-address "theoneandonlywoj@gmail.com")
 
 ;; Doom exposes five (optional) variables for controlling fonts in Doom:
 ;;
@@ -40,6 +40,18 @@
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
 (setq display-line-numbers-type 'relative)
+
+;; Highlight current line
+(global-hl-line-mode t)
+
+;; Better scrolling
+(pixel-scroll-precision-mode 1)
+(setq scroll-margin 5
+      scroll-conservatively 101)
+
+;; Display time and battery status (if applicable)
+(display-time-mode 1)
+(display-battery-mode 1)
 
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!

@@ -49,13 +49,19 @@
 (setq scroll-margin 5
       scroll-conservatively 101)
 
+;; Remember cursor position in files
+(save-place-mode 1)
+
+;; Typing replaces selected text
+(delete-selection-mode t)
+
 ;; Display time and battery status (if applicable)
 (display-time-mode 1)
 (display-battery-mode 1)
 
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
-(setq org-directory "~/org/")
+;; (setq org-directory "~/org/")
 
 
 ;; Whenever you reconfigure a package, make sure to wrap your config in an
@@ -89,3 +95,131 @@
 ;;
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
+
+;; Second Brain with org-mode
+;; 1. Directory Setup
+(dolist (dir '("~/Desktop/Repos/Second-Brain/1.Notes"
+               "~/Desktop/Repos/Second-Brain/2.Templates"
+               "~/Desktop/Repos/Second-Brain/3.Journal"
+               "~/Desktop/Repos/Second-Brain/4.Archived"))
+  (unless (file-directory-p dir)
+    (make-directory dir t)))
+
+;; 2. Org-roam Setup
+(use-package! org-roam
+  :init
+  (setq org-roam-v2-ack t) ;; if using org-roam v2
+  :custom
+  (org-roam-directory "~/Desktop/Repos/Second-Brain/1.Notes")
+  (org-roam-db-location "~/Desktop/Repos/Second-Brain/org-roam.db")
+  :config
+  (org-roam-setup))
+
+;; 3. Org-roam UI Setup
+(use-package! org-roam-ui
+  :after org-roam
+  :hook (org-roam . org-roam-ui-mode)
+  :config
+  (setq org-roam-ui-sync-theme t
+        org-roam-ui-follow t
+        org-roam-ui-update-on-save t))
+
+;; 4. Org-roam Capture Templates
+(setq org-roam-capture-templates
+      '(("j" "Daily Journal" plain
+         (file+head "~/Desktop/Repos/Second-Brain/3.Journal/%<%Y-%m-%d-%A>.org"
+                    "#+TITLE: Journal: %<%Y-%m-%d-%A>\n#+AUTHOR: Wojciech Orzechowski (theoneandonlywoj@gmail.com)\n#+DATE: %U\n\n")
+         :unnarrowed t)))
+
+;; 5. Interactive Template Note Creation
+(defun my/org-roam-capture-from-template ()
+  "Create a new Org-roam note by selecting a template from ~/Desktop/Repos/Second-Brain/2.Templates.
+Prompts for title and initial file tags (with completion from existing tags)."
+  (interactive)
+  (let* ((template-dir "~/Desktop/Repos/Second-Brain/2.Templates/")
+         (templates (directory-files template-dir t ".*\\.org$"))
+         (template-file (completing-read "Choose template: " templates))
+         (title (read-string "Note Title: "))
+         ;; Collect all existing tags from org-roam files
+         (existing-tags (delete-dups
+                         (org-roam-db-query
+                          [:select [tag]
+                           :from tags])))
+         ;; Flatten tag list (they're stored as vectors)
+         (tag-list (mapcar #'car existing-tags))
+         (tags (completing-read-multiple
+                "Tags (comma-separated, TAB to complete): "
+                tag-list))
+         (tags-string (mapconcat #'identity tags " "))
+         ;; Generate slug and paths
+         (slug (org-roam-node-slug (org-roam-node-create :title title)))
+         (target-dir "~/Desktop/Repos/Second-Brain/1.Notes/")
+         (target-file (concat (file-name-as-directory target-dir) slug ".org")))
+
+    ;; Ensure target directory exists
+    (unless (file-directory-p target-dir)
+      (make-directory target-dir t))
+
+    ;; Copy template into target file
+    (copy-file template-file target-file t)
+
+    ;; Replace placeholders and insert tags
+    (with-current-buffer (find-file target-file)
+      (goto-char (point-min))
+      (while (re-search-forward "${title}" nil t)
+        (replace-match title))
+      (goto-char (point-min))
+      (while (re-search-forward "${author}" nil t)
+        (replace-match "Wojciech Orzechowski"))
+      (goto-char (point-min))
+      (while (re-search-forward "${date}" nil t)
+        (replace-match (format-time-string "%Y-%m-%d %H:%M")))
+      ;; Add or update FILETAGS line
+      (goto-char (point-min))
+      (if (re-search-forward "^#\\+FILETAGS:" nil t)
+          (replace-match (format "#+FILETAGS: %s" tags-string))
+        (re-search-forward "^#\\+TITLE:" nil t)
+        (forward-line 1)
+        (insert (format "#+FILETAGS: %s\n" tags-string))))
+
+    ;; Finalize and sync with Org-roam
+    (find-file target-file)
+    (org-roam-db-sync)
+    (message "Created note: %s" target-file)))
+
+;; 6. Archive Note Function
+(defun my/org-roam-archive-note ()
+  "Archive the current Org-roam note by moving it
+  to 4.Archived and updating Org-roam DB."
+  (interactive)
+  (let* ((current (buffer-file-name))
+         (archive-dir "~/Desktop/Repos/Second-Brain/4.Archived/"))
+
+    ;; Ensure archive directory exists
+    (unless (file-directory-p archive-dir)
+      (make-directory archive-dir t))
+
+    (if (not current)
+        (message "No file to archive")
+      (let ((new-location (concat (file-name-as-directory archive-dir)
+                                  (file-name-nondirectory current))))
+
+        ;; Close buffer before moving
+        (kill-buffer)
+
+        ;; Move file to archive folder
+        (rename-file current new-location 1)
+
+        ;; Update Org-roam DB
+        (org-roam-db-sync)
+
+        (message "Archived note to %s" new-location)))))
+
+;; 7. Keybindings
+(map! :leader
+      :desc "Create new note from template"
+      "n p" #'my/org-roam-capture-from-template
+      :desc "Daily journal note"
+      "n j" #'org-roam-dailies-capture-today
+      :desc "Archive current Org-roam note"
+      "n d" #'my/org-roam-archive-note)

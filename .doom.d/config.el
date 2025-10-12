@@ -202,7 +202,7 @@ Result is saved in ~/Desktop/Repos/Second-Brain/3.Journal/."
          (filename (format-time-string "%Y-%m-%d-%A.org"))
          (file-path (concat (file-name-as-directory journal-dir) filename))
          (title (format-time-string "%Y-%m-%d (%A)"))
-         (template-file (completing-read "Choose daily template: "
+         (template-file (completing-read "Choose journal note template: "
                                          (directory-files template-dir t ".*\\.org$"))))
 
     ;; Ensure journal directory exists
@@ -220,13 +220,13 @@ Result is saved in ~/Desktop/Repos/Second-Brain/3.Journal/."
         (replace-match "Wojciech Orzechowski"))
       (goto-char (point-min))
       (while (re-search-forward "${date}" nil t)
-        (replace-match (format-time-string "%Y-%m-%d %H:%M")))
+        (replace-match (format-time-string "%Y-%m-%d")))
       (save-buffer))
 
     ;; Sync and open
     (org-roam-db-sync)
     (find-file file-path)
-    (message "Created daily journal: %s" file-path)))
+    (message "Created journal note: %s" file-path)))
 
 ;; 7. Archive Note Function
 (defun my/org-roam-archive-note ()

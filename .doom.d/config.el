@@ -113,7 +113,7 @@
   (org-roam-directory "~/Desktop/Repos/Second-Brain/1.Notes")
   (org-roam-db-location "~/Desktop/Repos/Second-Brain/org-roam.db")
   :config
-  (org-roam-setup))
+  (org-roam-db-autosync-enable))
 
 ;; 3. Org-roam UI Setup
 (use-package! org-roam-ui
@@ -123,6 +123,10 @@
   (setq org-roam-ui-sync-theme t
         org-roam-ui-follow t
         org-roam-ui-update-on-save t))
+
+;; 4. Org-roam Capture Templates
+;; Setting the Journal Directory
+(setq org-roam-dailies-directory "~/Desktop/Repos/Second-Brain/3.Journal/")
 
 ;; 4. Org-roam Capture Templates
 (setq org-roam-capture-templates
@@ -187,7 +191,44 @@ Prompts for title and initial file tags (with completion from existing tags)."
     (org-roam-db-sync)
     (message "Created note: %s" target-file)))
 
-;; 6. Archive Note Function
+;; 6. Interactive Template Journal Note Creation
+(defun my/org-roam-daily-from-template ()
+  "Create a daily Org-roam journal note from a selected template.
+Templates are in ~/Desktop/Repos/Second-Brain/2.Templates.
+Result is saved in ~/Desktop/Repos/Second-Brain/3.Journal/."
+  (interactive)
+  (let* ((template-dir "~/Desktop/Repos/Second-Brain/2.Templates/")
+         (journal-dir "~/Desktop/Repos/Second-Brain/3.Journal/")
+         (filename (format-time-string "%Y-%m-%d-%A.org"))
+         (file-path (concat (file-name-as-directory journal-dir) filename))
+         (title (format-time-string "%Y-%m-%d (%A)"))
+         (template-file (completing-read "Choose daily template: "
+                                         (directory-files template-dir t ".*\\.org$"))))
+
+    ;; Ensure journal directory exists
+    (unless (file-directory-p journal-dir)
+      (make-directory journal-dir t))
+
+    ;; Copy template and fill placeholders
+    (copy-file template-file file-path t)
+    (with-current-buffer (find-file file-path)
+      (goto-char (point-min))
+      (while (re-search-forward "${title}" nil t)
+        (replace-match title))
+      (goto-char (point-min))
+      (while (re-search-forward "${author}" nil t)
+        (replace-match "Wojciech Orzechowski"))
+      (goto-char (point-min))
+      (while (re-search-forward "${date}" nil t)
+        (replace-match (format-time-string "%Y-%m-%d %H:%M")))
+      (save-buffer))
+
+    ;; Sync and open
+    (org-roam-db-sync)
+    (find-file file-path)
+    (message "Created daily journal: %s" file-path)))
+
+;; 7. Archive Note Function
 (defun my/org-roam-archive-note ()
   "Archive the current Org-roam note by moving it
   to 4.Archived and updating Org-roam DB."
@@ -215,11 +256,11 @@ Prompts for title and initial file tags (with completion from existing tags)."
 
         (message "Archived note to %s" new-location)))))
 
-;; 7. Keybindings
+;;  . Keybindings
 (map! :leader
-      :desc "Create new note from template"
+      :desc "New note from template"
       "n p" #'my/org-roam-capture-from-template
       :desc "Daily journal note"
-      "n j" #'org-roam-dailies-capture-today
-      :desc "Archive current Org-roam note"
+      "n j" #'my/org-roam-daily-from-template
+      :desc "Archive current note"
       "n d" #'my/org-roam-archive-note)

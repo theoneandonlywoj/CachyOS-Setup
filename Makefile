@@ -11,6 +11,7 @@ BACKUP_DIR := $(HOME)/.doom.d_backup_$(TIMESTAMP)
 sync: backup
 	@echo "📦 Copying new Doom Emacs configuration..."
 	@cp -r ./.doom.d $(HOME)/.doom.d
+	@doom sync
 	@echo "✅ New configuration synced to $(HOME)/.doom.d"
 
 backup:

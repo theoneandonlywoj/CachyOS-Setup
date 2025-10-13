@@ -59,6 +59,11 @@
 (display-time-mode 1)
 (display-battery-mode 1)
 
+;; Always split vertically to the right and horizontally below
+(setq split-width-threshold 0)   ;; Force vertical splits to go to the right
+(setq split-height-threshold nil) ;; Never split horizontally unless explicitly
+
+
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
 ;; (setq org-directory "~/org/")
@@ -256,7 +261,7 @@ Result is saved in ~/Desktop/Repos/Second-Brain/3.Journal/."
 
         (message "Archived note to %s" new-location)))))
 
-;;  . Keybindings
+;;  8. Keybindings
 (map! :leader
       :desc "New note from template"
       "n p" #'my/org-roam-capture-from-template

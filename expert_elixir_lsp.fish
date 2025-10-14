@@ -4,10 +4,10 @@
 # Author: theoneandonlywoj
 
 # === Configuration ===
-set INSTALL_DIR "$HOME/.local/share/elixir-expert-ls"
+set INSTALL_DIR "$HOME/.local/share/elixir-expert-lsp"
 set REPO "elixir-lang/expert"
 set RELEASE "nightly"  # Can be "nightly" or specific version like "v0.1.0"
-set PATTERN "expert"
+set PATTERN "expert_linux_amd64"
 
 echo "🚀 Starting Expert LSP installation..."
 echo "📌 Repository: $REPO"
@@ -99,9 +99,9 @@ cd "$current_dir"
 # === 5. Add to PATH in Fish config ===
 echo "🛠️ Updating Fish configuration..."
 set fish_config_file ~/.config/fish/config.fish
-set path_line "set -gx PATH \$HOME/.local/share/elixir-expert-ls \$PATH"
+set path_line "set -gx PATH \$HOME/.local/share/elixir-ls \$PATH"
 
-if not grep -q "set -gx PATH.*\.local/share/elixir-expert-ls" $fish_config_file
+if not grep -q "set -gx PATH.*\.local/share/elixir-ls" $fish_config_file
     echo "# Expert LSP installation" >> $fish_config_file
     echo "$path_line" >> $fish_config_file
     echo "🔧 Added Expert LSP to PATH in $fish_config_file"
@@ -110,29 +110,9 @@ else
 end
 
 # Reload PATH for current session
-set -gx PATH $HOME/.local/share/elixir-expert-ls $PATH
+set -gx PATH $HOME/.local/share/elixir-ls $PATH
 
-# === 6. Verify installation ===
-echo "🧪 Verifying installation..."
-
-if test -f "$INSTALL_DIR/$PATTERN" -a -x "$INSTALL_DIR/$PATTERN"
-    echo "✅ Expert LSP installed successfully!"
-    echo "📁 Location: $INSTALL_DIR/$PATTERN"
-
-    # Test if the binary runs
-    if "$INSTALL_DIR/$PATTERN" --help > /dev/null 2>&1
-        echo "✅ Basic functionality test passed"
-    else if "$INSTALL_DIR/$PATTERN" -h > /dev/null 2>&1
-        echo "✅ Basic functionality test passed"
-    else
-        echo "⚠️  Could not test basic functionality (may require specific arguments)"
-    end
-else
-    echo "❌ Expert LSP installation verification failed"
-    exit 1
-end
-
-# === 7. Show installation details ===
+# === 6. Show installation details ===
 echo
 echo "📚 Installation details:"
 echo "   Binary:      $INSTALL_DIR/$PATTERN"
@@ -140,7 +120,7 @@ echo "   Repository:  $REPO"
 echo "   Release:     $RELEASE"
 echo "   Permissions: "(ls -l "$INSTALL_DIR/$PATTERN" | awk '{print $1}')
 
-# === 8. Doom Emacs configuration ===
+# === 7. Doom Emacs configuration ===
 echo
 echo "💡 Doom Emacs configuration:"
 echo "   Add this to your ~/.doom.d/config.el:"

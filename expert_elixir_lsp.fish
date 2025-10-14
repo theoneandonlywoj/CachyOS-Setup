@@ -99,9 +99,9 @@ cd "$current_dir"
 # === 5. Add to PATH in Fish config ===
 echo "🛠️ Updating Fish configuration..."
 set fish_config_file ~/.config/fish/config.fish
-set path_line "set -gx PATH \$HOME/.local/share/elixir-ls \$PATH"
+set path_line "set -gx PATH \$HOME/.local/share/elixir-expert-lsp \$PATH"
 
-if not grep -q "set -gx PATH.*\.local/share/elixir-ls" $fish_config_file
+if not grep -q "set -gx PATH.*\.local/share/elixir-expert-lsp" $fish_config_file
     echo "# Expert LSP installation" >> $fish_config_file
     echo "$path_line" >> $fish_config_file
     echo "🔧 Added Expert LSP to PATH in $fish_config_file"
@@ -110,7 +110,7 @@ else
 end
 
 # Reload PATH for current session
-set -gx PATH $HOME/.local/share/elixir-ls $PATH
+set -gx PATH $HOME/.local/share/elixir-expert-lsp $PATH
 
 # === 6. Show installation details ===
 echo

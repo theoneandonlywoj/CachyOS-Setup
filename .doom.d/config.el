@@ -269,3 +269,18 @@ Result is saved in ~/Desktop/Repos/Second-Brain/3.Journal/."
       "n j" #'my/org-roam-daily-from-template
       :desc "Archive current note"
       "n d" #'my/org-roam-archive-note)
+
+;; 9. Styling
+;; Nicer checkboxes
+(after! org
+  (add-hook 'org-mode-hook
+            (lambda ()
+              (push '("[ ]" . "◯") prettify-symbols-alist)  ;; Bigger empty
+              (push '("[X]" . "⬤") prettify-symbols-alist)  ;; Bigger checked
+              (push '("[-]" . "◑") prettify-symbols-alist)  ;; Bigger partial
+              (prettify-symbols-mode)))
+
+  (setq prettify-symbols-unprettify-at-point 'right-edge)
+
+  (custom-set-faces!
+   '(org-checkbox :height 1.2)))

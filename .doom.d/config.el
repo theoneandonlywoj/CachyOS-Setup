@@ -301,6 +301,26 @@ Result is saved in ~/Desktop/Repos/Second-Brain/3.Journal/."
       :desc "Archive current note"
       "n d" #'my/org-roam-archive-note)
 
+(defun my/org-insert-example-block ()
+  "Insert an Org example block at point."
+  (interactive)
+  (insert "#+BEGIN_EXAMPLE\n\n#+END_EXAMPLE")
+  (forward-line -1))
+
+(map! :leader
+      :desc "Insert Org example block"
+      "i b" #'my/org-insert-example-block)
+
+(defun my/org-insert-elixir-code-block ()
+  "Insert an Elixir block at point."
+  (interactive)
+  (insert "#+BEGIN_SRC elixir\n\n#+END_SRC")
+  (forward-line -1))
+
+(map! :leader
+      :desc "Insert Elixir code block"
+      "i c e" #'my/org-insert-elixir-code-block)
+
 ;; 9. Styling
 ;; Nicer checkboxes
 (after! org

@@ -49,6 +49,26 @@
 (setq scroll-margin 5
       scroll-conservatively 101)
 
+;; Window management and automac focus
+;; Automatically focus the new window after splitting
+(defun my/split-window-right-and-focus ()
+  "Split the window vertically and move focus to the new one."
+  (interactive)
+  (split-window-right)
+  (other-window 1))
+
+(defun my/split-window-below-and-focus ()
+  "Split the window horizontally and move focus to the new one."
+  (interactive)
+  (split-window-below)
+  (other-window 1))
+
+;; Override Doom’s default window split keybindings
+(map! :leader
+      (:prefix ("w" . "windows")
+       :desc "Split window right and focus" "v" #'my/split-window-right-and-focus
+       :desc "Split window below and focus" "s" #'my/split-window-below-and-focus))
+
 ;; Remember cursor position in files
 (save-place-mode 1)
 

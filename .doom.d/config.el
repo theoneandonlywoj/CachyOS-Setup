@@ -198,15 +198,23 @@ Prompts for title and initial file tags (with completion from existing tags)."
 
 ;; 6. Interactive Template Journal Note Creation
 (defun my/org-roam-daily-from-template ()
-  "Create a daily Org-roam journal note from a selected template.
-Templates are in ~/Desktop/Repos/Second-Brain/2.Templates.
+  "Create an Org-roam daily journal note from a selected template.
+Prompts for whether to create the note for today, tomorrow, or N days ahead.
+Templates are in ~/Desktop/Repos/Second-Brain/2.Templates/.
 Result is saved in ~/Desktop/Repos/Second-Brain/3.Journal/."
   (interactive)
   (let* ((template-dir "~/Desktop/Repos/Second-Brain/2.Templates/")
          (journal-dir "~/Desktop/Repos/Second-Brain/3.Journal/")
-         (filename (format-time-string "%Y-%m-%d-%A.org"))
+         (choice (read-number "Create journal for: [1] Today  [2] Tomorrow  [n] Days ahead → " 1))
+         (offset (cond
+                  ((= choice 1) 0)
+                  ((= choice 2) 1)
+                  (t choice)))
+         ;; Calculate the target date
+         (target-time (time-add (current-time) (days-to-time offset)))
+         (filename (format-time-string "%Y-%m-%d-%A.org" target-time))
          (file-path (concat (file-name-as-directory journal-dir) filename))
-         (title (format-time-string "%Y-%m-%d (%A)"))
+         (title (format-time-string "%Y-%m-%d (%A)" target-time))
          (template-file (completing-read "Choose journal note template: "
                                          (directory-files template-dir t ".*\\.org$"))))
 
@@ -225,7 +233,7 @@ Result is saved in ~/Desktop/Repos/Second-Brain/3.Journal/."
         (replace-match "Wojciech Orzechowski"))
       (goto-char (point-min))
       (while (re-search-forward "${date}" nil t)
-        (replace-match (format-time-string "%Y-%m-%d")))
+        (replace-match (format-time-string "%Y-%m-%d" target-time)))
       (save-buffer))
 
     ;; Sync and open

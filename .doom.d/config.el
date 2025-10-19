@@ -55,6 +55,11 @@
 (setq scroll-margin 5
       scroll-conservatively 101)
 
+;; Editing
+(map! :leader
+      :desc "Delete current line"
+      "e d d" #'kill-whole-line)
+
 ;; Window management and automac focus
 ;; Automatically focus the new window after splitting
 (defun my/split-window-right-and-focus ()

@@ -1,9 +1,9 @@
 #!/usr/bin/env fish
-# === second_brain.fish ===
-# Purpose: Install Emacs 30 ("your second brain") on CachyOS (KDE Plasma, Fish shell)
+# === emacs.fish ===
+# Purpose: Install Emacs 30 on CachyOS (KDE Plasma, Fish shell)
 # Author: theoneandonlywoj
 
-echo "🧠 Welcome to the Second Brain setup (Emacs 30 installer for CachyOS)"
+echo "🧠 Welcome to Emacs 30 installer for CachyOS"
 echo
 
 # === 1. Update system safely ===

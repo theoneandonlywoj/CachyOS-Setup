@@ -1,5 +1,5 @@
 #!/usr/bin/env fish
-# === install_cursor.fish ===
+# === cursor.fish ===
 # Purpose: Install or update Cursor AI on CachyOS / Arch Linux
 # Author: theoneandonlywoj
 

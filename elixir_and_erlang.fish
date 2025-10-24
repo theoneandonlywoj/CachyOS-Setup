@@ -1,5 +1,5 @@
 #!/usr/bin/env fish
-# === install_erlang_elixir_mise.fish ===
+# === elixir_and_erlang.fish ===
 # Purpose: Install specific versions of Erlang & Elixir via Mise on CachyOS (Arch Linux)
 # Author: theoneandonlywoj
 

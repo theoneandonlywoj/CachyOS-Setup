@@ -1,5 +1,5 @@
 #!/usr/bin/env fish
-# === doom_emacs_full.fish ===
+# === doom_emacs.fish ===
 # Purpose: Full Doom Emacs setup on CachyOS (Arch Linux)
 # Includes: backup, install Doom, Markdown, ShellCheck
 # Author: theoneandonlywoj

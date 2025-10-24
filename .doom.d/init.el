@@ -36,7 +36,7 @@
        ;;(emoji +unicode)  ; 🙂
        hl-todo           ; highlight TODO/FIXME/NOTE/DEPRECATED/HACK/REVIEW
        ;;indent-guides     ; highlighted indent columns
-       ;;ligatures         ; ligatures and symbols to make your code pretty again
+       ligatures         ; ligatures and symbols to make your code pretty again
        ;;minimap           ; show a map of the code on the side
        modeline          ; snazzy, Atom-inspired modeline, plus API
        ;;nav-flash         ; blink cursor line after big motions
@@ -57,7 +57,7 @@
        (evil +everywhere); come to the dark side, we have cookies
        file-templates    ; auto-snippets for empty files
        fold              ; (nigh) universal code folding
-       ;;(format +onsave)  ; automated prettiness
+       (format +onsave)  ; automated prettiness
        ;;god               ; run Emacs commands without modifier keys
        ;;lispy             ; vim for lisp, for people who don't like vim
        ;;multiple-cursors  ; editing in many places at once
@@ -81,11 +81,11 @@
        ;;eshell            ; the elisp shell that works everywhere
        ;;shell             ; simple shell REPL for Emacs
        ;;term              ; basic terminal emulator for Emacs
-       ;;vterm             ; the best terminal emulation in Emacs
+       vterm             ; the best terminal emulation in Emacs
 
        :checkers
        syntax              ; tasing you for every semicolon you forget
-       ;;(spell +flyspell) ; tasing you for misspelling mispelling
+       (spell +flyspell) ; tasing you for misspelling mispelling
        ;;grammar           ; tasing grammar mistake every you make
 
        :tools
@@ -93,21 +93,21 @@
        ;;biblio            ; Writes a PhD for you (citation needed)
        ;;collab            ; buffers with friends
        ;;debugger          ; FIXME stepping through code, to help you add bugs
-       ;;direnv
+       direnv
        ;;docker
-       ;;editorconfig      ; let someone else argue about tabs vs spaces
+       editorconfig      ; let someone else argue about tabs vs spaces
        ;;ein               ; tame Jupyter notebooks with emacs
        (eval +overlay)     ; run code, run (also, repls)
        lookup              ; navigate your code and its documentation
        ;;llm               ; when I said you needed friends, I didn't mean...
-       ;;(lsp +eglot)      ; M-x vscode
+       (lsp +eglot)      ; M-x vscode
        magit             ; a git porcelain for Emacs
        ;;make              ; run make tasks from Emacs
        ;;pass              ; password manager for nerds
        ;;pdf               ; pdf enhancements
        ;;terraform         ; infrastructure as code
        ;;tmux              ; an API for interacting with tmux
-       ;;tree-sitter       ; syntax and parsing, sitting in a tree...
+       tree-sitter       ; syntax and parsing, sitting in a tree...
        ;;upload            ; map local to remote projects via ssh/ftp
 
        :os
@@ -127,7 +127,7 @@
        ;;data              ; config/data formats
        ;;(dart +flutter)   ; paint ui and not much else
        ;;dhall
-       ;;elixir            ; erlang done right
+       (elixir +lsp)     ; erlang done right
        ;;elm               ; care for a cup of TEA?
        emacs-lisp        ; drown in parentheses
        ;;erlang            ; an elegant language for a more civilized age

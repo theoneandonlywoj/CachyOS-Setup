@@ -41,6 +41,9 @@
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
 (setq display-line-numbers-type 'relative)
 
+;; Force line numbers on in all programming/text modes
+(global-display-line-numbers-mode t)
+
 ;; Show raw org links (i.e. don't hide [[url][desc]] by default)
 (setq org-link-descriptive nil)
 
@@ -51,6 +54,11 @@
 (pixel-scroll-precision-mode 1)
 (setq scroll-margin 5
       scroll-conservatively 101)
+
+;; Editing
+(map! :leader
+      :desc "Delete current line"
+      "e d d" #'kill-whole-line)
 
 ;; Window management and automac focus
 ;; Automatically focus the new window after splitting

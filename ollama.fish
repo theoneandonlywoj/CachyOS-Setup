@@ -1,5 +1,5 @@
 #!/usr/bin/env fish
-# === install_ollama_clean.fish ===
+# === ollama.fish ===
 # Purpose: Clean install or update of Ollama on CachyOS (Arch Linux)
 # Author: theoneandonlywoj
 

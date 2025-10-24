@@ -1,5 +1,5 @@
 #!/usr/bin/env fish
-# === install_github_cli.fish ===
+# === github_cli.fish ===
 # Purpose: Install GitHub CLI (gh) on CachyOS (Arch Linux)
 # Author: theoneandonlywoj
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env fish
-# === install_mise.fish ===
+# === mise.fish ===
 # Purpose: Install Mise (environment/version manager) on CachyOS (Arch Linux)
 # Author: theoneandonlywoj
 

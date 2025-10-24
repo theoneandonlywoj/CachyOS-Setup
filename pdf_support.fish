@@ -1,11 +1,8 @@
 #!/usr/bin/env fish
-# =====================================================================
-# 🖊️  Xournal++ Installation Script (with PDF Support)
-# For: CachyOS / Arch Linux
-# =====================================================================
-# This script installs Xournal++ and all dependencies needed
-# for full PDF annotation support (via Poppler).
-# =====================================================================
+# === pdf_support.fish ===
+# Purpose: Xournal++ installation with full PDF annotation support on CachyOS (Arch Linux)
+# Includes: Xournal++, Poppler libraries, GTK3, audio support
+# Author: theoneandonlywoj
 
 echo "🚀 Starting Xournal++ installation (with PDF support)..."
 

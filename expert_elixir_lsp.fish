@@ -1,5 +1,5 @@
 #!/usr/bin/env fish
-# === install_expert_lsp.fish ===
+# === expert_elixir_lsp.fish ===
 # Purpose: Install Elixir's Expert LSP server from GitHub releases
 # Author: theoneandonlywoj
 

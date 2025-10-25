@@ -55,3 +55,6 @@
 
 ;; UI for Second Brain
 (package! org-roam-ui)
+
+;; Tree-sitter support for Elixir
+(package! elixir-ts-mode)

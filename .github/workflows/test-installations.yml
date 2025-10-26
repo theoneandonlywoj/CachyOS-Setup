@@ -45,14 +45,15 @@ jobs:
       
     - name: Make all scripts executable
       run: |
+        cd "$GITHUB_WORKSPACE"
         chmod +x *.fish
       
     - name: Test Core Installations (Matrix: core)
       if: matrix.test-set == 'core'
       run: |
-        runuser -l github -c 'cd /__w/CachyOS-Setup && ./git_setup.fish' &
-        sudo -u github bash -c 'cd /__w/CachyOS-Setup && ./htop.fish' &
-        sudo -u github bash -c 'cd /__w/CachyOS-Setup && ./netcat.fish' &
+        runuser -l github -c "cd '$GITHUB_WORKSPACE' && yes n | ./git_setup.fish" &
+        sudo -u github bash -c "cd '$GITHUB_WORKSPACE' && yes n | ./htop.fish" &
+        sudo -u github bash -c "cd '$GITHUB_WORKSPACE' && yes n | ./netcat.fish" &
         wait
         
         # Verify installations
@@ -62,48 +63,48 @@ jobs:
       if: matrix.test-set == 'full'
       run: |
         # Run installations as the GitHub user
-        cd /__w/CachyOS-Setup
+        cd "$GITHUB_WORKSPACE"
         
         # Core system utilities
-        runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./htop.fish' || true
-        runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./netcat.fish' || true
+        runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./htop.fish" || true
+        runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./netcat.fish" || true
         
         # Containers
-        runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./podman.fish' || true
+        runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./podman.fish" || true
         
         # Browsers
-        runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./chromium.fish' || true
+        runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./chromium.fish" || true
         
         # Editors (with timeout to avoid hanging)
-        timeout 300 runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./cursor.fish' || true
-        timeout 300 runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./emacs.fish' || true
-        timeout 300 runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./doom_emacs.fish' || true
+        timeout 300 runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./cursor.fish" || true
+        timeout 300 runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./emacs.fish" || true
+        timeout 300 runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./doom_emacs.fish" || true
         
         # Language tools
-        runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./mise.fish' || true
-        timeout 600 runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./elixir_and_erlang.fish' || true
+        runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./mise.fish" || true
+        timeout 600 runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./elixir_and_erlang.fish" || true
         
         # Communication tools
-        timeout 300 runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./postman.fish' || true
-        timeout 300 runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./slack.fish' || true
-        timeout 300 runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./webcord.fish' || true
+        timeout 300 runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./postman.fish" || true
+        timeout 300 runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./slack.fish" || true
+        timeout 300 runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./webcord.fish" || true
         
         # Networking
-        runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./wireshark.fish' || true
-        runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./wrk.fish' || true
+        runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./wireshark.fish" || true
+        runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./wrk.fish" || true
         
         # Cloud/Infrastructure
-        runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./cuda.fish' || true
-        runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./dbeaver.fish' || true
-        runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./kubectl.fish' || true
-        runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./ngrok.fish' || true
+        runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./cuda.fish" || true
+        runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./dbeaver.fish" || true
+        runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./kubectl.fish" || true
+        runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./ngrok.fish" || true
         
         # AI & Media
-        timeout 300 runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./ollama.fish' || true
-        runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./vlc.fish' || true
-        runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./pdf_support.fish' || true
-        runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./exiftool.fish' || true
-        runuser -l github -c 'cd /__w/CachyOS-Setup && yes | ./vivaldi.fish' || true
+        timeout 300 runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./ollama.fish" || true
+        runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./vlc.fish" || true
+        runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./pdf_support.fish" || true
+        runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./exiftool.fish" || true
+        runuser -l github -c "cd $GITHUB_WORKSPACE && yes n | ./vivaldi.fish" || true
         
     - name: Verify installations
       run: |
@@ -124,7 +125,7 @@ jobs:
       continue-on-error: true
       run: |
         if [ -f Makefile ]; then
-          cd /__w/CachyOS-Setup
+          cd $GITHUB_WORKSPACE
           make healthcheck || echo "Healthcheck completed with some failures (expected in CI)"
         fi
       

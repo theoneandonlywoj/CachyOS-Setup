@@ -30,13 +30,18 @@ jobs:
         useradd -m -G wheel testuser
         echo 'testuser ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
         
+        # Get the correct workspace path
+        echo "Repository directory: $GITHUB_WORKSPACE"
+        
         # Make scripts executable
+        cd "$GITHUB_WORKSPACE"
         chmod +x *.fish
+        ls -la *.fish
       
     - name: Test htop installation
       run: |
         echo "Testing htop installation..."
-        cd /__w/CachyOS-Setup
+        cd "$GITHUB_WORKSPACE"
         yes n | timeout 60 ./htop.fish || echo "htop test completed (may have prompted)"
         
         # Verify it's available
@@ -45,7 +50,7 @@ jobs:
     - name: Test netcat installation
       run: |
         echo "Testing netcat installation..."
-        cd /__w/CachyOS-Setup
+        cd "$GITHUB_WORKSPACE"
         yes n | timeout 60 ./netcat.fish || echo "netcat test completed"
         
         # Verify it's available
@@ -55,7 +60,7 @@ jobs:
       continue-on-error: true
       run: |
         echo "Testing Chromium installation..."
-        cd /__w/CachyOS-Setup
+        cd "$GITHUB_WORKSPACE"
         yes n | timeout 180 ./chromium.fish || echo "Chromium test completed"
         
         if pacman -Q chromium 2>/dev/null; then
@@ -68,7 +73,7 @@ jobs:
       continue-on-error: true
       run: |
         echo "Testing VLC installation..."
-        cd /__w/CachyOS-Setup
+        cd "$GITHUB_WORKSPACE"
         yes n | timeout 180 ./vlc.fish || echo "VLC test completed"
         
         if pacman -Q vlc 2>/dev/null; then
@@ -81,7 +86,7 @@ jobs:
       continue-on-error: true
       run: |
         echo "Testing kubectl installation..."
-        cd /__w/CachyOS-Setup
+        cd "$GITHUB_WORKSPACE"
         yes n | timeout 120 ./kubectl.fish || echo "kubectl test completed"
         
         # Check if kubectl was installed
@@ -91,7 +96,7 @@ jobs:
       continue-on-error: true
       run: |
         echo "Testing wrk installation..."
-        cd /__w/CachyOS-Setup
+        cd "$GITHUB_WORKSPACE"
         yes n | timeout 120 ./wrk.fish || echo "wrk test completed"
         
         which wrk && echo "✓ wrk installed" || echo "⚠ wrk not found"

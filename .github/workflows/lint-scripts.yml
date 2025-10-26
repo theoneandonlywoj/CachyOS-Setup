@@ -25,10 +25,12 @@ jobs:
       
     - name: Make scripts executable
       run: |
+        cd "$GITHUB_WORKSPACE"
         chmod +x *.fish
       
     - name: Check Fish syntax for all scripts
       run: |
+        cd "$GITHUB_WORKSPACE"
         echo "Checking syntax of all .fish scripts..."
         failed=0
         for script in *.fish; do
@@ -50,6 +52,7 @@ jobs:
       
     - name: Check for shebang line
       run: |
+        cd "$GITHUB_WORKSPACE"
         echo "Checking shebang lines..."
         failed=0
         for script in *.fish; do

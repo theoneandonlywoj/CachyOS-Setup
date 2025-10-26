@@ -1,0 +1,70 @@
+name: Lint Installation Scripts
+
+on:
+  push:
+    branches: [ main, master, clean_up ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  lint-scripts:
+    runs-on: ubuntu-latest
+    
+    container:
+      image: archlinux:latest
+      
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Install Fish shell and dependencies
+      run: |
+        pacman -Syu --noconfirm
+        pacman -S --needed --noconfirm fish
+      
+    - name: Make scripts executable
+      run: |
+        chmod +x *.fish
+      
+    - name: Check Fish syntax for all scripts
+      run: |
+        echo "Checking syntax of all .fish scripts..."
+        failed=0
+        for script in *.fish; do
+          echo "Checking $script..."
+          if fish -n "$script" 2>&1; then
+            echo "✓ $script"
+          else
+            echo "✗ $script - Syntax error!"
+            failed=1
+          fi
+        done
+        
+        if [ $failed -eq 1 ]; then
+          echo "Some scripts have syntax errors!"
+          exit 1
+        fi
+        
+        echo "All scripts passed syntax check!"
+      
+    - name: Check for shebang line
+      run: |
+        echo "Checking shebang lines..."
+        failed=0
+        for script in *.fish; do
+          if ! head -n 1 "$script" | grep -q '#!/usr/bin/env fish'; then
+            echo "✗ $script - Missing shebang line!"
+            failed=1
+          else
+            echo "✓ $script"
+          fi
+        done
+        
+        if [ $failed -eq 1 ]; then
+          echo "Some scripts are missing shebang lines!"
+          exit 1
+        fi
+        
+        echo "All scripts have correct shebang!"
+

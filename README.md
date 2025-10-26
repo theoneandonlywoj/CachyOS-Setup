@@ -129,22 +129,19 @@ This repository includes GitHub Actions workflows to test the installation scrip
 
 ### Available Workflows
 
-1. **lint-scripts.yml** - Syntax validation
-   - Checks Fish syntax on all scripts
-   - Verifies shebang lines
-   - Fast validation (runs on every push)
+1. **test-cachyos-setup.yml** - Basic setup and execution
+   - Sets up Arch Linux environment (CachyOS-compatible)
+   - Installs Fish shell and dependencies
+   - Makes all scripts executable
+   - Runs syntax checks
+   - Can execute specific scripts via manual trigger
 
-2. **smoke-tests.yml** - Quick installation tests
-   - Tests core utilities (htop, netcat)
-   - Tests browser installations (Chromium, VLC)
-   - Tests development tools (kubectl, wrk)
-   - Runs basic verification
-
-3. **test-installations.yml** - Full installation suite
-   - Runs all installation scripts
-   - Tests in core and full modes
-   - Comprehensive verification
-   - Requires more resources and time
+2. **install-test.yml** - Comprehensive testing
+   - Syntax checking (runs on every push)
+   - Smoke tests for core utilities
+   - Full test suite for multiple tools
+   - Single script testing mode
+   - Manual trigger with multiple test options
 
 ### Viewing Workflows
 
@@ -154,20 +151,34 @@ This repository includes GitHub Actions workflows to test the installation scrip
   - ⏱️ Execution time
   - 📋 Detailed logs
 
-### Running Workflows Locally
+### Local Testing
 
-You can test workflows locally using [act](https://github.com/nektos/act):
+For quick local testing without Docker, use the provided script:
 
 ```sh
-# Test smoke tests
-act -W .github/workflows/smoke-tests.yml
-
-# Test lint
-act -W .github/workflows/lint-scripts.yml
-
-# Test full installations
-act -W .github/workflows/test-installations.yml
+./test-local.sh
 ```
+
+This script:
+- ✅ Checks Fish syntax on all scripts
+- ✅ Validates shebang lines
+- ✅ Verifies file permissions
+- ✅ Checks script structure and documentation
+- ⚡ Fast - No Docker required
+
+### Running Workflows Locally with Docker
+
+If you have Docker properly configured, you can test the full workflows:
+
+```sh
+# Test basic setup
+act -W .github/workflows/test-cachyos-setup.yml
+
+# Test installation scripts
+act -W .github/workflows/install-test.yml
+```
+
+**Note:** If you encounter Docker permission errors locally, just push to GitHub - the workflows will run automatically without any local Docker setup needed.
 
 ## 📝 Contributing
 

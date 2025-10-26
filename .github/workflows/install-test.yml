@@ -2,7 +2,7 @@ name: Installation Tests
 
 on:
   push:
-    branches: [ main, master, clean_up ]
+    branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:

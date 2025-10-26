@@ -9,10 +9,10 @@ echo "🚀 Starting Inkscape installation..."
 # === 1. Check if Inkscape is already installed ===
 command -q inkscape; and set -l inkscape_installed "installed"
 if test -n "$inkscape_installed"
-    echo "ℹ Inkscape is already installed."
+    echo "✅ Inkscape is already installed."
     read -P "Do you want to reinstall? [y/N] " reinstall
     if test "$reinstall" != "y" -a "$reinstall" != "Y"
-        echo "ℹ Skipping Inkscape installation."
+        echo "⚠ Skipping Inkscape installation."
         exit 0
     end
     echo "📦 Removing existing Inkscape installation..."

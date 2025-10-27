@@ -62,7 +62,9 @@ set all_packages @modelcontextprotocol/server-filesystem \
                  @modelcontextprotocol/server-memory \
                  @modelcontextprotocol/server-sequential-thinking \
                  @sentry/mcp-server \
-                 chrome-devtools-mcp
+                 chrome-devtools-mcp \
+                 @leval/mcp-grafana \
+                 prometheus-mcp
 
 echo "🧪 Testing package availability..."
 set available_packages
@@ -116,6 +118,12 @@ for pkg in $available_packages
     # Handle chrome-devtools-mcp
     else if string match -q 'chrome-devtools-mcp' $pkg
         set server_name "chrome-devtools"
+    # Handle @leval/mcp-grafana
+    else if string match -q '@leval/mcp-grafana' $pkg
+        set server_name "grafana"
+    # Handle prometheus-mcp
+    else if string match -q 'prometheus-mcp' $pkg
+        set server_name "prometheus"
     # For other @scope/package-name patterns, use the last part after /
     else if string match -q '@*/*' $pkg
         set server_name (string split '/' $pkg | tail -1)
@@ -149,11 +157,27 @@ for pkg in $available_packages
             echo '      "env": {' >> $mcp_json_path
             echo '        "POSTGRES_CONNECTION_STRING": "postgresql://localhost:5432/my_db"' >> $mcp_json_path
             echo '      }' >> $mcp_json_path
+        case grafana
+            echo '      ],' >> $mcp_json_path
+            echo '      "env": {' >> $mcp_json_path
+            echo '        "GRAFANA_URL": "http://localhost:3000",' >> $mcp_json_path
+            echo '        "GRAFANA_SERVICE_ACCOUNT_TOKEN": ""' >> $mcp_json_path
+            echo '      }' >> $mcp_json_path
+        case prometheus
+            echo '      ],' >> $mcp_json_path
+            echo '      "env": {' >> $mcp_json_path
+            echo '        "PROMETHEUS_URL": "http://localhost:9090"' >> $mcp_json_path
+            echo '      }' >> $mcp_json_path
+        case sentry
+            echo '      ],' >> $mcp_json_path
+            echo '      "env": {' >> $mcp_json_path
+            echo '        "SENTRY_DSN": ""' >> $mcp_json_path
+            echo '      }' >> $mcp_json_path
         case '*'
-            # No additional config needed for memory and sequential-thinking
+            # No additional config needed for memory, sequential-thinking, chrome-devtools
     end
     
-    if not contains $server_name github postgres
+    if not contains $server_name github postgres grafana prometheus sentry
         echo '      ]' >> $mcp_json_path
     end
     
@@ -193,7 +217,12 @@ echo "   Get one at: https://github.com/settings/tokens"
 echo ""
 echo "2. PostgreSQL: Update POSTGRES_CONNECTION_STRING with your database details"
 echo ""
-echo "3. Sentry: Add SENTRY_DSN or SENTRY_API_KEY in the sentry server config"
+echo "3. Grafana: Update GRAFANA_URL and GRAFANA_SERVICE_ACCOUNT_TOKEN"
+echo "   Get a token at: https://grafana.com/docs/grafana-cloud/administration/service-accounts/"
+echo ""
+echo "4. Prometheus: Update PROMETHEUS_URL to point to your Prometheus instance"
+echo ""
+echo "5. Sentry: Add SENTRY_DSN or SENTRY_API_KEY in the sentry server config"
 echo "   Get one at: https://sentry.io/settings/{org}/auth-tokens/"
 echo ""
 echo "🔄 After configuring, restart Cursor for changes to take effect."

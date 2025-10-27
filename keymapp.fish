@@ -113,11 +113,28 @@ end
 # Clean up tar file
 rm $keymapp_tar
 
+# === 10. Create symlink for direct access ===
+echo "🔗 Creating symlink for direct access..."
+set local_bin_dir $HOME/.local/bin
+mkdir -p $local_bin_dir
+
+# Remove existing symlink if it exists
+if test -L $local_bin_dir/keymapp
+    rm $local_bin_dir/keymapp
+end
+
+# Create new symlink
+ln -s $keymapp_binary $local_bin_dir/keymapp
+if test $status -ne 0
+    echo "⚠️ Failed to create symlink. You can still run Keymapp using: $keymapp_binary"
+else
+    echo "✅ Symlink created at $local_bin_dir/keymapp"
+end
+
 echo "✅ Keymapp installation/update complete!"
 echo ""
 echo "⚠️  IMPORTANT: You need to REBOOT your system for the udev rules to take effect."
 echo "   Without rebooting, Keymapp may not be able to access your ZSA keyboard."
 echo ""
-echo "🖱 After rebooting, you can launch Keymapp by running: $keymapp_binary"
-echo "   Or by running: $keymapp_dir/keymapp"
+echo "🖱 After rebooting, you can launch Keymapp by running: keymapp"
 

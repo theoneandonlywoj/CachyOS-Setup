@@ -7,9 +7,9 @@ echo "🚀 Starting Cursor AI installation/update..."
 
 # === 1. Install dependencies ===
 echo "📦 Installing required dependencies..."
-sudo pacman -S --noconfirm wget
+sudo pacman -S --noconfirm fuse2 wget
 if test $status -ne 0
-    echo "❌ Failed to install wget. Aborting."
+    echo "❌ Failed to install dependencies. Aborting."
     exit 1
 end
 

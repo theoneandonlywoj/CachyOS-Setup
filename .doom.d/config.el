@@ -34,36 +34,6 @@
 ;; `load-theme' function. This is the default:
 (setq doom-theme 'doom-one)
 
-;; Eglot Configuration for ElixirLS
-(after! eglot
-  ;; Configure Elixir LSP to use ElixirLS server
-  (setq eglot-server-programs
-        '((elixir-mode . ("~/.local/share/elixir-ls/language_server.sh"))))
-  
-  ;; Eglot UI configuration
-  (setq eglot-autoshutdown t
-        eglot-confirm-server-initiated-edits nil
-        eglot-connect-timeout 60
-        eglot-ignored-server-capabilities '(:documentHighlightProvider)))
-
-;; VTerm configuration
-(after! vterm
-  (setq vterm-max-scrollback 10000
-        vterm-shell "fish"))
-
-;; Tree-sitter configuration for Elixir
-(after! tree-sitter
-  (add-hook 'elixir-ts-mode-hook #'tree-sitter-hl-mode))
-
-;; Format on save configuration
-(after! format
-  (setq +format-on-save-enabled-modes
-        '(not emacs-lisp-mode  ; elisp files are not formatted on save
-              sql-mode         ; sql files are not formatted on save
-              tex-mode         ; latex files are not formatted on save
-              text-mode        ; text files are not formatted on save
-              markdown-mode))) ; markdown files are not formatted on save
-
 ;; Start Emacs in fullscreen
 (add-to-list 'initial-frame-alist '(fullscreen . maximized))
 
@@ -172,26 +142,34 @@
     (make-directory dir t)))
 
 ;; 2. Org-roam Setup
-(after! org-roam
+(use-package! org-roam
+  :init
   (setq org-roam-v2-ack t) ;; if using org-roam v2
+  :custom
   (org-roam-directory "~/Desktop/Repos/Second-Brain/1.Notes")
   (org-roam-db-location "~/Desktop/Repos/Second-Brain/org-roam.db")
+  :config
   (org-roam-db-autosync-enable))
 
 ;; 3. Org-roam UI Setup
-(after! org-roam-ui
+(use-package! org-roam-ui
+  :after org-roam
+  :hook (org-roam . org-roam-ui-mode)
+  :config
   (setq org-roam-ui-sync-theme t
         org-roam-ui-follow t
         org-roam-ui-update-on-save t))
 
 ;; 4. Org-roam Capture Templates
-(after! org-roam
-  (setq org-roam-dailies-directory "~/Desktop/Repos/Second-Brain/3.Journal/")
-  (setq org-roam-capture-templates
-        '(("j" "Daily Journal" plain
-           (file+head "~/Desktop/Repos/Second-Brain/3.Journal/%<%Y-%m-%d-%A>.org"
-                      "#+TITLE: Journal: %<%Y-%m-%d-%A>\n#+AUTHOR: Wojciech Orzechowski (theoneandonlywoj@gmail.com)\n#+DATE: %U\n\n")
-           :unnarrowed t))))
+;; Setting the Journal Directory
+(setq org-roam-dailies-directory "~/Desktop/Repos/Second-Brain/3.Journal/")
+
+;; 4. Org-roam Capture Templates
+(setq org-roam-capture-templates
+      '(("j" "Daily Journal" plain
+         (file+head "~/Desktop/Repos/Second-Brain/3.Journal/%<%Y-%m-%d-%A>.org"
+                    "#+TITLE: Journal: %<%Y-%m-%d-%A>\n#+AUTHOR: Wojciech Orzechowski (theoneandonlywoj@gmail.com)\n#+DATE: %U\n\n")
+         :unnarrowed t)))
 
 ;; 5. Interactive Template Note Creation
 (defun my/org-roam-capture-from-template ()
@@ -331,25 +309,6 @@ Result is saved in ~/Desktop/Repos/Second-Brain/3.Journal/."
       :desc "Archive current note"
       "n d" #'my/org-roam-archive-note)
 
-;; Eglot Keybindings
-(map! :leader
-      (:prefix ("c" . "code")
-       :desc "Go to definition" "g" #'xref-find-definitions
-       :desc "Find references" "r" #'xref-find-references
-       :desc "Find implementations" "i" #'eglot-find-implementation
-       :desc "Rename symbol" "R" #'eglot-rename
-       :desc "Code actions" "a" #'eglot-code-actions
-       :desc "Format buffer" "f" #'eglot-format-buffer
-       :desc "Organize imports" "o" #'eglot-code-action-organize-imports
-       :desc "Show hover" "h" #'eldoc-doc-buffer
-       :desc "Show diagnostics" "d" #'flymake-show-buffer-diagnostics))
-
-;; VTerm keybindings
-(map! :leader
-      (:prefix ("t" . "terminal")
-       :desc "Open vterm" "t" #'vterm
-       :desc "Open vterm in project" "p" #'vterm-in-project))
-
 (defun my/org-insert-example-block ()
   "Insert an Org example block at point."
   (interactive)
@@ -384,35 +343,3 @@ Result is saved in ~/Desktop/Repos/Second-Brain/3.Journal/."
 
   (custom-set-faces!
    '(org-checkbox :height 1.2)))
-
-;; Additional productivity enhancements
-;; Better scrolling behavior
-(setq scroll-margin 5
-      scroll-conservatively 101
-      scroll-preserve-screen-position t)
-
-;; Auto-save configuration
-(setq auto-save-default t
-      auto-save-interval 200
-      auto-save-timeout 20)
-
-;; Backup configuration
-(setq backup-directory-alist '(("." . "~/.emacs.d/backups"))
-      backup-by-copying t
-      version-control t
-      delete-old-versions t
-      kept-new-versions 6
-      kept-old-versions 2)
-
-;; Spell checking configuration
-(after! flyspell
-  (setq flyspell-issue-message-flag nil
-        ispell-program-name "hunspell"
-        ispell-dictionary "en_US"))
-
-;; Elixir-specific configuration
-(after! elixir-mode
-  (setq elixir-smie-indent-basic 2
-        elixir-iex-command "iex"
-        elixir-mix-command "mix"
-        elixir-mix-test-command "mix test"))

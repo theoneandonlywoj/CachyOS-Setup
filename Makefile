@@ -332,6 +332,198 @@ healthcheck:
 	fi; \
 	echo; \
 	\
+	# Htop Check \
+	total=$$((total + 1)); \
+	echo "🔍 Checking Htop..."; \
+	if command -v htop >/dev/null 2>&1; then \
+		htop_version=$$(htop --version 2>/dev/null | head -n1 || echo "htop installed"); \
+		echo "  ✓ Binary: $$htop_version"; \
+		passed=$$((passed + 1)); \
+		echo "  [✓] Htop - PASSED"; \
+	else \
+		failed=$$((failed + 1)); \
+		echo "  [✗] Htop - FAILED (htop not found)"; \
+	fi; \
+	echo; \
+	\
+	# Netcat (nc) Check \
+	total=$$((total + 1)); \
+	echo "🔍 Checking Netcat (nc)..."; \
+	if command -v nc >/dev/null 2>&1; then \
+		nc_version=$$(nc -h 2>&1 | head -n1 || echo "nc available"); \
+		echo "  ✓ Binary: $$nc_version"; \
+		passed=$$((passed + 1)); \
+		echo "  [✓] Netcat - PASSED"; \
+	else \
+		failed=$$((failed + 1)); \
+		echo "  [✗] Netcat - FAILED (nc not found)"; \
+	fi; \
+	echo; \
+	\
+	# Chromium Check \
+	total=$$((total + 1)); \
+	echo "🔍 Checking Chromium..."; \
+	if command -v chromium >/dev/null 2>&1; then \
+		chromium_version=$$(timeout 2s chromium --version 2>/dev/null | head -n1 || true); \
+		if [ -n "$$chromium_version" ]; then echo "  ✓ Binary: $$chromium_version"; else echo "  ✓ Binary: chromium present"; fi; \
+		passed=$$((passed + 1)); \
+		echo "  [✓] Chromium - PASSED"; \
+	else \
+		failed=$$((failed + 1)); \
+		echo "  [✗] Chromium - FAILED (chromium not found)"; \
+	fi; \
+	echo; \
+	\
+	# Postman Check \
+	total=$$((total + 1)); \
+	echo "🔍 Checking Postman..."; \
+	if command -v postman >/dev/null 2>&1; then \
+		postman_version=$$(timeout 2s postman --version 2>/dev/null | head -n1 || true); \
+		if [ -n "$$postman_version" ]; then echo "  ✓ Binary: $$postman_version"; else echo "  ✓ Binary: postman present"; fi; \
+		passed=$$((passed + 1)); \
+		echo "  [✓] Postman - PASSED"; \
+	else \
+		failed=$$((failed + 1)); \
+		echo "  [✗] Postman - FAILED (postman not found)"; \
+	fi; \
+	echo; \
+	\
+	# Slack Check \
+	total=$$((total + 1)); \
+	echo "🔍 Checking Slack..."; \
+	if command -v slack >/dev/null 2>&1; then \
+		slack_version=$$(timeout 2s slack --version 2>/dev/null | head -n1 || true); \
+		if [ -n "$$slack_version" ]; then echo "  ✓ Binary: $$slack_version"; else echo "  ✓ Binary: slack present"; fi; \
+		passed=$$((passed + 1)); \
+		echo "  [✓] Slack - PASSED"; \
+	else \
+		failed=$$((failed + 1)); \
+		echo "  [✗] Slack - FAILED (slack not found)"; \
+	fi; \
+	echo; \
+	\
+	# WebCord Check \
+	total=$$((total + 1)); \
+	echo "🔍 Checking WebCord..."; \
+	if command -v webcord >/dev/null 2>&1; then \
+		webcord_version=$$(timeout 2s webcord --version 2>/dev/null | head -n1 || true); \
+		if [ -n "$$webcord_version" ]; then echo "  ✓ Binary: $$webcord_version"; else echo "  ✓ Binary: webcord present"; fi; \
+		passed=$$((passed + 1)); \
+		echo "  [✓] WebCord - PASSED"; \
+	else \
+		failed=$$((failed + 1)); \
+		echo "  [✗] WebCord - FAILED (webcord not found)"; \
+	fi; \
+	echo; \
+	\
+	# Wireshark Check \
+	total=$$((total + 1)); \
+	echo "🔍 Checking Wireshark..."; \
+	if command -v wireshark >/dev/null 2>&1; then \
+		wireshark_version=$$(timeout 2s wireshark --version 2>/dev/null | head -n1 || true); \
+		if [ -n "$$wireshark_version" ]; then echo "  ✓ Binary: $$wireshark_version"; else echo "  ✓ Binary: wireshark present"; fi; \
+		passed=$$((passed + 1)); \
+		echo "  [✓] Wireshark - PASSED"; \
+	else \
+		failed=$$((failed + 1)); \
+		echo "  [✗] Wireshark - FAILED (wireshark not found)"; \
+	fi; \
+	echo; \
+	\
+	# wrk Check \
+	total=$$((total + 1)); \
+	echo "🔍 Checking wrk..."; \
+	if command -v wrk >/dev/null 2>&1; then \
+		wrk_version=$$(wrk --version 2>/dev/null | head -n1 || echo "wrk installed"); \
+		echo "  ✓ Binary: $$wrk_version"; \
+		passed=$$((passed + 1)); \
+		echo "  [✓] wrk - PASSED"; \
+	else \
+		failed=$$((failed + 1)); \
+		echo "  [✗] wrk - FAILED (wrk not found)"; \
+	fi; \
+	echo; \
+	\
+	# CUDA Check \
+	total=$$((total + 1)); \
+	echo "🔍 Checking CUDA..."; \
+	nvidia_ok=0; nvcc_ok=0; \
+	if command -v nvidia-smi >/dev/null 2>&1; then \
+		echo "  ✓ NVIDIA: nvidia-smi available"; nvidia_ok=1; \
+	else \
+		echo "  ⚠ NVIDIA: nvidia-smi not found"; \
+	fi; \
+	if command -v nvcc >/dev/null 2>&1; then \
+		nvcc_version=$$(nvcc --version 2>/dev/null | tail -n1); \
+		echo "  ✓ CUDA: $$nvcc_version"; nvcc_ok=1; \
+	else \
+		echo "  ⚠ CUDA: nvcc compiler not found"; \
+	fi; \
+	if [ $$nvidia_ok -eq 1 ] || [ $$nvcc_ok -eq 1 ]; then \
+		passed=$$((passed + 1)); \
+		echo "  [✓] CUDA - PASSED"; \
+	else \
+		failed=$$((failed + 1)); \
+		echo "  [✗] CUDA - FAILED (nvidia-smi and nvcc not found)"; \
+	fi; \
+	echo; \
+	\
+	# DBeaver Check \
+	total=$$((total + 1)); \
+	echo "🔍 Checking DBeaver..."; \
+	if command -v dbeaver >/dev/null 2>&1; then \
+		dbeaver_version=$$(timeout 2s dbeaver -version 2>/dev/null | head -n1 || true); \
+		if [ -n "$$dbeaver_version" ]; then echo "  ✓ Binary: $$dbeaver_version"; else echo "  ✓ Binary: dbeaver present"; fi; \
+		passed=$$((passed + 1)); \
+		echo "  [✓] DBeaver - PASSED"; \
+	else \
+		failed=$$((failed + 1)); \
+		echo "  [✗] DBeaver - FAILED (dbeaver not found)"; \
+	fi; \
+	echo; \
+	\
+	# kubectl Check \
+	total=$$((total + 1)); \
+	echo "🔍 Checking kubectl..."; \
+	if command -v kubectl >/dev/null 2>&1; then \
+		kubectl_version=$$(kubectl version --client=true --short 2>/dev/null | head -n1); \
+		echo "  ✓ Binary: $$kubectl_version"; \
+		passed=$$((passed + 1)); \
+		echo "  [✓] kubectl - PASSED"; \
+	else \
+		failed=$$((failed + 1)); \
+		echo "  [✗] kubectl - FAILED (kubectl not found)"; \
+	fi; \
+	echo; \
+	\
+	# VLC Check \
+	total=$$((total + 1)); \
+	echo "🔍 Checking VLC..."; \
+	if command -v vlc >/dev/null 2>&1; then \
+		vlc_version=$$(timeout 2s vlc --version 2>/dev/null | head -n1 || true); \
+		if [ -n "$$vlc_version" ]; then echo "  ✓ Binary: $$vlc_version"; else echo "  ✓ Binary: vlc present"; fi; \
+		passed=$$((passed + 1)); \
+		echo "  [✓] VLC - PASSED"; \
+	else \
+		failed=$$((failed + 1)); \
+		echo "  [✗] VLC - FAILED (vlc not found)"; \
+	fi; \
+	echo; \
+	\
+	# ExifTool Check \
+	total=$$((total + 1)); \
+	echo "🔍 Checking ExifTool..."; \
+	if command -v exiftool >/dev/null 2>&1; then \
+		exiftool_version=$$(exiftool -ver 2>/dev/null | head -n1); \
+		echo "  ✓ Binary: ExifTool $$exiftool_version"; \
+		passed=$$((passed + 1)); \
+		echo "  [✓] ExifTool - PASSED"; \
+	else \
+		failed=$$((failed + 1)); \
+		echo "  [✗] ExifTool - FAILED (exiftool not found)"; \
+	fi; \
+	echo; \
+	\
 	# Summary \
 	echo "=== Summary ==="; \
 	echo "Passed: $$passed/$$total"; \

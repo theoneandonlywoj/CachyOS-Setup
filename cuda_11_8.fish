@@ -99,6 +99,26 @@ else
     echo "✅ cuDNN installed successfully."
 end
 
+# === 4.5. Install optional CUDA dependencies ===
+echo "📦 Installing optional CUDA development dependencies..."
+echo "💡 The following packages enhance CUDA development tools:"
+echo "   - gdb: Required for cuda-gdb debugger"
+echo "   - glu: Required for some profiling tools in CUPTI"
+read -P "Install optional dependencies? [y/N] " install_opt_deps
+
+if test "$install_opt_deps" = "y" -o "$install_opt_deps" = "Y"
+    echo "📦 Installing gdb and glu..."
+    sudo pacman -S --needed --noconfirm gdb glu
+    if test $status -eq 0
+        echo "✅ Optional dependencies installed successfully."
+    else
+        echo "⚠ Some optional dependencies failed to install (CUDA will still work)."
+    end
+else
+    echo "⚠ Skipping optional dependencies."
+    echo "💡 You can install them later with: sudo pacman -S gdb glu"
+end
+
 # === 5. Setup CUDA environment in /etc/profile.d/cuda.sh ===
 echo "📦 Setting up CUDA environment variables..."
 echo "💡 Adding CUDA paths to /etc/profile.d/cuda.sh..."
@@ -147,6 +167,8 @@ end
 if command -q nvidia-smi
     echo "📊 GPU Information:"
     nvidia-smi --query-gpu=name,driver_version,cuda_version --format=csv,noheader 2>&1 | head -n 1
+    echo "💡 Note: nvidia-smi shows the CUDA version supported by your driver"
+    echo "💡 This may differ from the installed CUDA toolkit version (11.8.0)"
 end
 
 echo

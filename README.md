@@ -1,102 +1,135 @@
 # CachyOS Setup Guide
 
-Automated installation scripts for setting up a development environment on CachyOS (Arch Linux) with Fish shell.
+Automated Fish shell scripts to set up a development environment on CachyOS (Arch Linux).
 
 ## 📋 Table of Contents
 
 - [Getting Started](#getting-started)
-- [Quick Start Installation](#quick-start-installation)
-- [Installation Order](#installation-order)
-- [Tools by Category](#tools-by-category)
+- [Prerequisites](#prerequisites)
+- [Before You Start](#before-you-start)
+- [Recommended Install Order](#recommended-install-order)
+- [Quick Start](#quick-start)
 - [Verification](#verification)
-- [CI/CD Testing](#cicd-testing)
+- [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
+- [License](#license)
 
 ## 🚀 Getting Started
 
-### Prerequisites
-- CachyOS (Arch Linux-based)
+Use these scripts to install common developer tools on CachyOS/Arch. Each script is idempotent where possible and safe to re-run.
+
+## 🧰 Prerequisites
+
+- CachyOS (Arch Linux–based)
 - Fish shell
 - sudo access
 - Internet connection
 
-### Initial Setup
+Optional (for some scripts):
+- Podman (installed by `podman.fish` if missing)
 
-1. **Setup Git and SSH Keys** (required for development)
+## ⚙️ Before You Start
+
+Make scripts executable (recommended):
+
+```sh
+chmod +x *.fish
+```
+
+Run a script (from this repository root):
+
+```sh
+./podman.fish
+```
+
+If Fish is not your login shell, you can run explicitly:
+
+```sh
+fish ./podman.fish
+```
+
+Git and SSH setup (optional but recommended for development):
+
 ```sh
 chmod +x git_setup.fish
 ./git_setup.fish
 ```
 
-This script will:
-- Generate SSH keys for GitHub
-- Configure Git user name and email
-- Copy SSH public key to clipboard
-- Guide you to add the key to GitHub
+## 🗂️ Recommended Install Order
 
-### Quick Start Installation
+Install in this order to satisfy dependencies and get the fastest path to a working dev environment:
 
-Run the following scripts in order to set up your development environment:
+1. System Utilities
+   - `htop.fish`, `netcat.fish`
+2. Containers & Development Tools
+   - `podman.fish`
+3. Web Browsers
+   - `chromium.fish`
+   - Optional: `vivaldi.fish`
+4. Editors & IDEs
+   - `cursor.fish`, `emacs.fish`, `doom_emacs.fish`
+5. Language Runtime & Version Manager
+   - `mise.fish`, `elixir_and_erlang.fish`
+6. API & Communication Tools
+   - `postman.fish`, `slack.fish`, `webcord.fish`
+7. Networking & Monitoring
+   - `wireshark.fish`, `wrk.fish`
+8. Cloud & Infrastructure
+   - `cuda.fish`, `dbeaver.fish`, `kubectl.fish`, `ngrok.fish`
+9. AI & Media
+   - `ollama.fish`, `vlc.fish`, `pdf_support.fish`, `exiftool.fish`
+
+## ⚡ Quick Start
+
+Run category-by-category:
 
 ```sh
 # System Utilities
-chmod +x htop.fish netcat.fish
 ./htop.fish
 ./netcat.fish
 
 # Containers & Development Tools
-chmod +x podman.fish
 ./podman.fish
 
 # Web Browsers
-chmod +x chromium.fish
 ./chromium.fish
+# Optional: ./vivaldi.fish
 
 # Editors & IDEs
-chmod +x cursor.fish emacs.fish doom_emacs.fish
 ./cursor.fish
 ./emacs.fish
 ./doom_emacs.fish
 
 # Language Runtime & Version Manager
-chmod +x mise.fish elixir_and_erlang.fish
 ./mise.fish
 ./elixir_and_erlang.fish
 
 # API & Communication Tools
-chmod +x postman.fish slack.fish webcord.fish
 ./postman.fish
 ./slack.fish
 ./webcord.fish
 
 # Networking & Monitoring
-chmod +x wireshark.fish wrk.fish
 ./wireshark.fish
 ./wrk.fish
 
 # Cloud & Infrastructure
-chmod +x cuda.fish dbeaver.fish kubectl.fish ngrok.fish
 ./cuda.fish
 ./dbeaver.fish
 ./kubectl.fish
 ./ngrok.fish
 
 # AI & Media
-chmod +x ollama.fish vlc.fish pdf_support.fish exiftool.fish vivaldi.fish
 ./ollama.fish
 ./vlc.fish
 ./pdf_support.fish
 ./exiftool.fish
-./vivaldi.fish
 ```
 
-**Alternative: Install all at once**
+Install all at once (ordered):
 
 ```sh
-# Make all scripts executable
 chmod +x *.fish
-
-# Install in order
 ./htop.fish && ./netcat.fish && ./podman.fish && ./chromium.fish && \
 ./cursor.fish && ./emacs.fish && ./doom_emacs.fish && ./mise.fish && \
 ./elixir_and_erlang.fish && ./postman.fish && ./slack.fish && \
@@ -105,91 +138,45 @@ chmod +x *.fish
 ./pdf_support.fish && ./kubectl.fish && ./exiftool.fish
 ```
 
+Run a single script explicitly with Fish (if needed):
+
+```sh
+fish ./cursor.fish
+```
+
 ## ✅ Verification
 
-Run a comprehensive health check to verify all installations:
+Verify installations with the health check:
 
 ```sh
 make healthcheck
 ```
 
-This will check:
-- ✅ Git Setup (SSH keys, configuration)
-- ✅ Mise installation
-- ✅ Ollama service
-- ✅ Podman socket
-- ✅ Doom Emacs
-- ✅ Cursor IDE
-- ✅ GitHub CLI
-- ✅ And more...
+This runs checks such as:
+- Git setup (SSH keys, configuration)
+- Mise installation
+- Ollama service
+- Podman socket
+- Doom Emacs
+- Cursor IDE
+- GitHub CLI
 
-## 🤖 CI/CD Testing
+## 🛠️ Troubleshooting
 
-This repository includes GitHub Actions workflows to test the installation scripts in a CachyOS/Arch Linux environment:
-
-### Available Workflows
-
-1. **test-cachyos-setup.yml** - Basic setup and execution
-   - Sets up Arch Linux environment (CachyOS-compatible)
-   - Installs Fish shell and dependencies
-   - Makes all scripts executable
-   - Runs syntax checks
-   - Can execute specific scripts via manual trigger
-
-2. **install-test.yml** - Comprehensive testing
-   - Syntax checking (runs on every push)
-   - Smoke tests for core utilities
-   - Full test suite for multiple tools
-   - Single script testing mode
-   - Manual trigger with multiple test options
-
-### Viewing Workflows
-
-- Go to the **Actions** tab in your GitHub repository
-- Each workflow shows:
-  - ✅ Success status
-  - ⏱️ Execution time
-  - 📋 Detailed logs
-
-### Local Testing
-
-For quick local testing without Docker, use the provided script:
-
-```sh
-./test-local.sh
-```
-
-This script:
-- ✅ Checks Fish syntax on all scripts
-- ✅ Validates shebang lines
-- ✅ Verifies file permissions
-- ✅ Checks script structure and documentation
-- ⚡ Fast - No Docker required
-
-### Running Workflows Locally with Docker
-
-If you have Docker properly configured, you can test the full workflows:
-
-```sh
-# Test basic setup
-act -W .github/workflows/test-cachyos-setup.yml
-
-# Test installation scripts
-act -W .github/workflows/install-test.yml
-```
-
-**Note:** If you encounter Docker permission errors locally, just push to GitHub - the workflows will run automatically without any local Docker setup needed.
+- Permissions: Ensure scripts are executable (`chmod +x *.fish`).
+- Missing Fish: Install Fish via your package manager, or use `fish ./script.fish`.
+- Network issues: Retry after confirming connectivity and mirrors.
+- Package cache: Update package databases if installs fail (`sudo pacman -Syu`).
+- Podman socket: Re-run `./podman.fish` if the socket isn’t active.
 
 ## 📝 Contributing
 
 To add a new tool:
 
-1. Create a new `<tool>.fish` script
-2. Follow the existing script patterns
-3. Test locally first
-4. Update this README
-5. Create a pull request
-6. Ensure GitHub Actions pass
+1. Create a new `<tool>.fish` script following existing patterns.
+2. Test locally.
+3. Update this README.
+4. Open a pull request.
 
 ## 📄 License
 

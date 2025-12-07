@@ -109,6 +109,38 @@ end
 # === 12. Source the path for current session ===
 set -gx PATH $HOME/opt/google-cloud-sdk/bin $PATH
 
+# === 13. Install gke-gcloud-auth-plugin component ===
+echo "🔌 Installing gke-gcloud-auth-plugin component..."
+if command -v yay > /dev/null
+    echo "📦 Attempting to install via yay (AUR)..."
+    yay -S --noconfirm google-cloud-cli-component-gke-gcloud-auth-plugin
+    if test $status -eq 0
+        echo "✅ gke-gcloud-auth-plugin installed via yay."
+    else
+        echo "⚠️  yay installation failed, trying gcloud components install..."
+        gcloud components install gke-gcloud-auth-plugin --quiet
+        if test $status -eq 0
+            echo "✅ gke-gcloud-auth-plugin installed via gcloud components."
+        else
+            echo "⚠️  Failed to install gke-gcloud-auth-plugin. You can install it manually later with:"
+            echo "   yay -S google-cloud-cli-component-gke-gcloud-auth-plugin"
+            echo "   or"
+            echo "   gcloud components install gke-gcloud-auth-plugin"
+        end
+    end
+else
+    echo "📦 yay not found, using gcloud components install..."
+    gcloud components install gke-gcloud-auth-plugin --quiet
+    if test $status -eq 0
+        echo "✅ gke-gcloud-auth-plugin installed via gcloud components."
+    else
+        echo "⚠️  Failed to install gke-gcloud-auth-plugin. You can install it manually later with:"
+        echo "   yay -S google-cloud-cli-component-gke-gcloud-auth-plugin"
+        echo "   or"
+        echo "   gcloud components install gke-gcloud-auth-plugin"
+    end
+end
+
 echo "🎉 Google Cloud SDK installation/update complete!"
 echo "📦 Backup of old SDK (if any) is located in $gcloud_dir"
 echo "🖱 You can now use 'gcloud' command in the terminal."

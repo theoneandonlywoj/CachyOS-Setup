@@ -5,7 +5,7 @@
 
 # === Version configuration ===
 set ERLANG_VERSION 27.1
-set ELIXIR_VERSION 1.17.3
+set ELIXIR_VERSION 1.18.0
 
 echo "🚀 Starting Erlang & Elixir setup via Mise..."
 echo "📌 Target versions:"

@@ -82,17 +82,16 @@ if test -z "$autostart" -o "$autostart" = "y" -o "$autostart" = "Y"
     mkdir -p ~/.config/autostart
     
     # Create desktop entry for autostart
-    cat > ~/.config/autostart/copyq.desktop << 'EOF'
-[Desktop Entry]
-Type=Application
-Name=CopyQ
-Comment=Clipboard manager with history
-Exec=copyq
-Icon=copyq
-Terminal=false
-Categories=Utility;
-X-GNOME-Autostart-enabled=true
-EOF
+    printf '%s\n' \
+        '[Desktop Entry]' \
+        'Type=Application' \
+        'Name=CopyQ' \
+        'Comment=Clipboard manager with history' \
+        'Exec=copyq' \
+        'Icon=copyq' \
+        'Terminal=false' \
+        'Categories=Utility;' \
+        'X-GNOME-Autostart-enabled=true' > ~/.config/autostart/copyq.desktop
     
     echo "✅ Auto-start enabled. CopyQ will start automatically on login."
     echo "   To disable, remove ~/.config/autostart/copyq.desktop"

@@ -15,7 +15,7 @@ DOOM_BACKUP_DIR := $(HOME)/.doom.d_backup_$(TIMESTAMP)
 # Cursor paths (Linux)
 CURSOR_CONFIG_DIR := $(HOME)/.config/Cursor/User
 CURSOR_BACKUP_DIR := $(HOME)/.config/Cursor/User_backup_$(TIMESTAMP)
-CURSOR_REPO_DIR := ./~/.config/Cursor/User
+CURSOR_REPO_DIR := ./.config/Cursor/User
 
 # ============================================================
 # DEFAULT TARGET
@@ -34,6 +34,13 @@ cursor-sync: cursor-backup
 	@cp "$(CURSOR_REPO_DIR)/settings.json" "$(CURSOR_CONFIG_DIR)/settings.json"
 	@cp "$(CURSOR_REPO_DIR)/keybindings.json" "$(CURSOR_CONFIG_DIR)/keybindings.json"
 	@echo "✅ Cursor configuration synced to $(CURSOR_CONFIG_DIR)"
+	@# Configure KDE Plasma keyboard: disable 3rd level key (AltGr) so Ctrl+Alt shortcuts work
+	@if [ "$$XDG_CURRENT_DESKTOP" = "KDE" ] && command -v kwriteconfig6 >/dev/null 2>&1; then \
+		echo "⌨️  Configuring KDE Plasma keyboard (disabling AltGr as 3rd level key)..."; \
+		kwriteconfig6 --file kxkbrc --group Layout --key Options "lv3:ralt_alt"; \
+		echo "✅ KDE keyboard configured: Right Alt now works as regular Alt"; \
+		echo "💡 Log out and back in (or run 'setxkbmap -option lv3:ralt_alt') to apply"; \
+	fi
 	@echo "💡 Restart Cursor to apply changes"
 
 cursor-backup:

@@ -12,108 +12,111 @@
     {
         "key": "cmd+alt+a",
         "command": "cursor.toggleAutoMode",
-        "when": "isMac && cursorChatFocus"
+        "when": "isMac"
     },
     {
         "key": "ctrl+alt+a",
         "command": "cursor.toggleAutoMode",
-        "when": "!isMac && cursorChatFocus"
+        "when": "!isMac"
     },
 
     // ===== SWITCH TO AGENT MODE =====
     {
         "key": "cmd+alt+g",
-        "command": "cursor.chat.switchToAgent",
-        "when": "isMac && cursorChatFocus"
+        "command": "composerMode.agent",
+        "when": "isMac"
     },
     {
         "key": "ctrl+alt+g",
-        "command": "cursor.chat.switchToAgent",
-        "when": "!isMac && cursorChatFocus"
+        "command": "composerMode.agent",
+        "when": "!isMac"
     },
 
     // ===== SWITCH TO ASK MODE =====
+    // Note: If composerMode.ask doesn't work, use Command Palette to find the correct command
     {
         "key": "cmd+alt+k",
-        "command": "cursor.chat.switchToAsk",
-        "when": "isMac && cursorChatFocus"
+        "command": "composerMode.ask",
+        "when": "isMac"
     },
     {
         "key": "ctrl+alt+k",
-        "command": "cursor.chat.switchToAsk",
-        "when": "!isMac && cursorChatFocus"
+        "command": "composerMode.ask",
+        "when": "!isMac"
     },
 
     // ===== SWITCH TO PLAN MODE =====
     {
         "key": "cmd+alt+p",
-        "command": "cursor.chat.switchToPlan",
-        "when": "isMac && cursorChatFocus"
+        "command": "composerMode.plan",
+        "when": "isMac"
     },
     {
         "key": "ctrl+alt+p",
-        "command": "cursor.chat.switchToPlan",
-        "when": "!isMac && cursorChatFocus"
+        "command": "composerMode.plan",
+        "when": "!isMac"
     },
 
     // ===== SWITCH TO DEBUG MODE =====
     {
         "key": "cmd+alt+d",
-        "command": "cursor.chat.switchToDebug",
-        "when": "isMac && cursorChatFocus"
+        "command": "composerMode.debug",
+        "when": "isMac"
     },
     {
         "key": "ctrl+alt+d",
-        "command": "cursor.chat.switchToDebug",
-        "when": "!isMac && cursorChatFocus"
+        "command": "composerMode.debug",
+        "when": "!isMac"
     },
 
     // ===== INCREASE CYCLE COUNT =====
     {
         "key": "cmd+alt+up",
         "command": "cursor.agent.increaseCycleCount",
-        "when": "isMac && cursorChatFocus"
+        "when": "isMac"
     },
     {
         "key": "ctrl+alt+up",
         "command": "cursor.agent.increaseCycleCount",
-        "when": "!isMac && cursorChatFocus"
+        "when": "!isMac"
     },
 
     // ===== DECREASE CYCLE COUNT =====
     {
         "key": "cmd+alt+down",
         "command": "cursor.agent.decreaseCycleCount",
-        "when": "isMac && cursorChatFocus"
+        "when": "isMac"
     },
     {
         "key": "ctrl+alt+down",
         "command": "cursor.agent.decreaseCycleCount",
-        "when": "!isMac && cursorChatFocus"
+        "when": "!isMac"
     },
 
     // ===== LIST MCP TOOLS =====
-    {
-        "key": "cmd+alt+m",
-        "command": "cursor.mcp.listTools",
-        "when": "isMac"
-    },
-    {
-        "key": "ctrl+alt+m",
-        "command": "cursor.mcp.listTools",
-        "when": "!isMac"
-    },
+    // Note: Command may not exist - check Command Palette for MCP-related commands
+    // Alternative: Open Cursor Settings > Features > MCP to view tools
+    // {
+    //     "key": "cmd+alt+m",
+    //     "command": "cursor.mcp.listTools",
+    //     "when": "isMac"
+    // },
+    // {
+    //     "key": "ctrl+alt+m",
+    //     "command": "cursor.mcp.listTools",
+    //     "when": "!isMac"
+    // },
 
     // ===== MAXIMIZE AGENT WINDOW =====
     {
         "key": "cmd+alt+enter",
         "command": "workbench.action.toggleMaximizedPanel",
-        "when": "isMac && panelFocus"
+        "when": "isMac"
     },
     {
         "key": "ctrl+alt+enter",
         "command": "workbench.action.toggleMaximizedPanel",
-        "when": "!isMac && panelFocus"
+        "when": "!isMac"
     },
 
     // ===== RESTORE AGENT WINDOW =====

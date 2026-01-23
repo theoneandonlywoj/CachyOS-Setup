@@ -1,0 +1,342 @@
+// Place your key bindings in this file to override the defaults
+// Cross-platform: cmd = macOS Command, ctrl = Linux/Windows Control
+// Note: On Linux, Right Alt is often AltGr - use Left Alt for these shortcuts
+[
+    // ===== EXISTING BINDING =====
+    {
+        "key": "cmd+i",
+        "command": "composerMode.agent"
+    },
+
+    // ===== TOGGLE AUTO MODE =====
+    {
+        "key": "cmd+alt+a",
+        "command": "cursor.toggleAutoMode",
+        "when": "isMac"
+    },
+    {
+        "key": "ctrl+alt+a",
+        "command": "cursor.toggleAutoMode",
+        "when": "!isMac"
+    },
+
+    // ===== SWITCH TO AGENT MODE =====
+    {
+        "key": "cmd+alt+g",
+        "command": "composerMode.agent",
+        "when": "isMac"
+    },
+    {
+        "key": "ctrl+alt+g",
+        "command": "composerMode.agent",
+        "when": "!isMac"
+    },
+
+    // ===== SWITCH TO ASK MODE =====
+    // Note: If composerMode.ask doesn't work, use Command Palette to find the correct command
+    {
+        "key": "cmd+alt+k",
+        "command": "composerMode.ask",
+        "when": "isMac"
+    },
+    {
+        "key": "ctrl+alt+k",
+        "command": "composerMode.ask",
+        "when": "!isMac"
+    },
+
+    // ===== SWITCH TO PLAN MODE =====
+    {
+        "key": "cmd+alt+p",
+        "command": "composerMode.plan",
+        "when": "isMac"
+    },
+    {
+        "key": "ctrl+alt+p",
+        "command": "composerMode.plan",
+        "when": "!isMac"
+    },
+
+    // ===== SWITCH TO DEBUG MODE =====
+    {
+        "key": "cmd+alt+d",
+        "command": "composerMode.debug",
+        "when": "isMac"
+    },
+    {
+        "key": "ctrl+alt+d",
+        "command": "composerMode.debug",
+        "when": "!isMac"
+    },
+
+    // ===== INCREASE CYCLE COUNT =====
+    {
+        "key": "cmd+alt+up",
+        "command": "cursor.agent.increaseCycleCount",
+        "when": "isMac"
+    },
+    {
+        "key": "ctrl+alt+up",
+        "command": "cursor.agent.increaseCycleCount",
+        "when": "!isMac"
+    },
+
+    // ===== DECREASE CYCLE COUNT =====
+    {
+        "key": "cmd+alt+down",
+        "command": "cursor.agent.decreaseCycleCount",
+        "when": "isMac"
+    },
+    {
+        "key": "ctrl+alt+down",
+        "command": "cursor.agent.decreaseCycleCount",
+        "when": "!isMac"
+    },
+
+    // ===== LIST MCP TOOLS =====
+    // Note: Command may not exist - check Command Palette for MCP-related commands
+    // Alternative: Open Cursor Settings > Features > MCP to view tools
+    // {
+    //     "key": "cmd+alt+m",
+    //     "command": "cursor.mcp.listTools",
+    //     "when": "isMac"
+    // },
+    // {
+    //     "key": "ctrl+alt+m",
+    //     "command": "cursor.mcp.listTools",
+    //     "when": "!isMac"
+    // },
+
+    // ===== MAXIMIZE AGENT WINDOW =====
+    {
+        "key": "cmd+alt+enter",
+        "command": "workbench.action.toggleMaximizedPanel",
+        "when": "isMac"
+    },
+    {
+        "key": "ctrl+alt+enter",
+        "command": "workbench.action.toggleMaximizedPanel",
+        "when": "!isMac"
+    },
+
+    // ===== RESTORE AGENT WINDOW =====
+    {
+        "key": "cmd+alt+shift+enter",
+        "command": "workbench.action.toggleMaximizedPanel",
+        "when": "isMac && panelFocus && panelMaximized"
+    },
+    {
+        "key": "ctrl+alt+shift+enter",
+        "command": "workbench.action.toggleMaximizedPanel",
+        "when": "!isMac && panelFocus && panelMaximized"
+    },
+
+    // ===== DETACH AS SEPARATE WINDOW =====
+    {
+        "key": "cmd+alt+o",
+        "command": "cursor.chat.detach",
+        "when": "isMac && cursorChatFocus"
+    },
+    {
+        "key": "ctrl+alt+o",
+        "command": "cursor.chat.detach",
+        "when": "!isMac && cursorChatFocus"
+    },
+
+    // ===== RE-ATTACH / DOCK BACK =====
+    {
+        "key": "cmd+alt+shift+o",
+        "command": "cursor.chat.attach",
+        "when": "isMac && cursorChatFocus"
+    },
+    {
+        "key": "ctrl+alt+shift+o",
+        "command": "cursor.chat.attach",
+        "when": "!isMac && cursorChatFocus"
+    },
+
+    // =========================================================
+    // ===== GIT OPERATIONS =====
+    // =========================================================
+
+    // ===== GIT BLAME (toggle line blame annotation) =====
+    // Requires GitLens extension for best experience
+    {
+        "key": "cmd+alt+b",
+        "command": "gitlens.toggleLineBlame",
+        "when": "isMac && editorTextFocus"
+    },
+    {
+        "key": "ctrl+alt+b",
+        "command": "gitlens.toggleLineBlame",
+        "when": "!isMac && editorTextFocus"
+    },
+
+    // ===== GIT BLAME (file blame - full file annotations) =====
+    {
+        "key": "cmd+alt+shift+b",
+        "command": "gitlens.toggleFileBlame",
+        "when": "isMac && editorTextFocus"
+    },
+    {
+        "key": "ctrl+alt+shift+b",
+        "command": "gitlens.toggleFileBlame",
+        "when": "!isMac && editorTextFocus"
+    },
+
+    // ===== GIT LOG (view file history) =====
+    {
+        "key": "cmd+alt+h",
+        "command": "gitlens.showFileHistory",
+        "when": "isMac && editorTextFocus"
+    },
+    {
+        "key": "ctrl+alt+h",
+        "command": "gitlens.showFileHistory",
+        "when": "!isMac && editorTextFocus"
+    },
+
+    // ===== GIT LOG (view line history) =====
+    {
+        "key": "cmd+alt+shift+h",
+        "command": "gitlens.showLineHistory",
+        "when": "isMac && editorTextFocus"
+    },
+    {
+        "key": "ctrl+alt+shift+h",
+        "command": "gitlens.showLineHistory",
+        "when": "!isMac && editorTextFocus"
+    },
+
+    // ===== GIT DIFF (compare with previous revision) =====
+    {
+        "key": "cmd+alt+c",
+        "command": "gitlens.diffWithPrevious",
+        "when": "isMac && editorTextFocus"
+    },
+    {
+        "key": "ctrl+alt+c",
+        "command": "gitlens.diffWithPrevious",
+        "when": "!isMac && editorTextFocus"
+    },
+
+    // ===== GIT DIFF (compare working file with HEAD) =====
+    {
+        "key": "cmd+alt+shift+c",
+        "command": "gitlens.diffWithHead",
+        "when": "isMac && editorTextFocus"
+    },
+    {
+        "key": "ctrl+alt+shift+c",
+        "command": "gitlens.diffWithHead",
+        "when": "!isMac && editorTextFocus"
+    },
+
+    // ===== GIT STAGE FILE =====
+    {
+        "key": "cmd+alt+s",
+        "command": "git.stage",
+        "when": "isMac"
+    },
+    {
+        "key": "ctrl+alt+s",
+        "command": "git.stage",
+        "when": "!isMac"
+    },
+
+    // ===== GIT UNSTAGE FILE =====
+    {
+        "key": "cmd+alt+shift+s",
+        "command": "git.unstage",
+        "when": "isMac"
+    },
+    {
+        "key": "ctrl+alt+shift+s",
+        "command": "git.unstage",
+        "when": "!isMac"
+    },
+
+    // ===== GIT COMMIT =====
+    {
+        "key": "cmd+alt+shift+c",
+        "command": "git.commit",
+        "when": "isMac && !editorTextFocus"
+    },
+    {
+        "key": "ctrl+alt+shift+c",
+        "command": "git.commit",
+        "when": "!isMac && !editorTextFocus"
+    },
+
+    // ===== GIT PUSH =====
+    {
+        "key": "cmd+alt+shift+p",
+        "command": "git.push",
+        "when": "isMac"
+    },
+    {
+        "key": "ctrl+alt+shift+p",
+        "command": "git.push",
+        "when": "!isMac"
+    },
+
+    // ===== GIT PULL =====
+    {
+        "key": "cmd+alt+shift+l",
+        "command": "git.pull",
+        "when": "isMac"
+    },
+    {
+        "key": "ctrl+alt+shift+l",
+        "command": "git.pull",
+        "when": "!isMac"
+    },
+
+    // ===== GIT FETCH =====
+    {
+        "key": "cmd+alt+f",
+        "command": "git.fetch",
+        "when": "isMac"
+    },
+    {
+        "key": "ctrl+alt+f",
+        "command": "git.fetch",
+        "when": "!isMac"
+    },
+
+    // ===== OPEN GIT CHANGES VIEW =====
+    {
+        "key": "cmd+alt+shift+g",
+        "command": "workbench.view.scm",
+        "when": "isMac"
+    },
+    {
+        "key": "ctrl+alt+shift+g",
+        "command": "workbench.view.scm",
+        "when": "!isMac"
+    },
+
+    // ===== SHOW COMMIT DETAILS (current line) =====
+    {
+        "key": "cmd+alt+.",
+        "command": "gitlens.showQuickCommitDetails",
+        "when": "isMac && editorTextFocus"
+    },
+    {
+        "key": "ctrl+alt+.",
+        "command": "gitlens.showQuickCommitDetails",
+        "when": "!isMac && editorTextFocus"
+    },
+
+    // ===== OPEN FILE ON GITHUB/REMOTE =====
+    {
+        "key": "cmd+alt+r",
+        "command": "gitlens.openFileOnRemote",
+        "when": "isMac && editorTextFocus"
+    },
+    {
+        "key": "ctrl+alt+r",
+        "command": "gitlens.openFileOnRemote",
+        "when": "!isMac && editorTextFocus"
+    }
+]

@@ -1,0 +1,92 @@
+{
+    // ===== WINDOW & LAYOUT =====
+    "window.commandCenter": true,
+    "workbench.sideBar.location": "left",
+    "workbench.panel.defaultLocation": "bottom",
+    "workbench.activityBar.location": "default",
+    "workbench.statusBar.visible": true,
+
+    // ===== CURSOR AI SETTINGS =====
+    // Default model for non-auto mode
+    "cursor.chat.defaultModel": "claude-4-opus",
+    "cursor.composer.defaultModel": "claude-4-opus",
+    
+    // Chat panel position
+    "cursor.chat.smoothStreaming": true,
+    "cursor.chat.showSuggestedFiles": true,
+
+    // ===== CURSOR QUOTA CHECKER (install extension first) =====
+    // Updates on every request with 1-second fallback
+    "cursorQuotaChecker.updateInterval": 1,
+    "cursorQuotaChecker.showInStatusBar": true,
+    "cursorQuotaChecker.showTooltip": true,
+
+    // ===== ELIXIR FORMAT ON SAVE =====
+    // Runs `mix format` on .ex and .exs files when saving
+    "[elixir]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "elixir-lsp.elixir-ls",
+        "editor.tabSize": 2
+    },
+    // ElixirLS settings for formatting
+    "elixirLS.mixEnv": "dev",
+    "elixirLS.projectDir": "",
+    "elixirLS.fetchDeps": false,
+
+    // ===== GIT SETTINGS =====
+    "git.autofetch": true,
+    "git.confirmSync": false,
+    "git.enableSmartCommit": true,
+    "gitlens.currentLine.enabled": true,
+    "gitlens.hovers.currentLine.over": "line",
+    "gitlens.codeLens.enabled": true
+
+    // ===== SUGGESTED OPTIONS (uncomment to enable) =====
+    
+    // --- Editor Appearance ---
+    // "editor.fontSize": 14,                          // Options: 10-24
+    // "editor.fontFamily": "Fira Code, Menlo, Monaco, monospace",
+    // "editor.fontLigatures": true,                   // Enable font ligatures
+    // "editor.lineHeight": 1.6,                       // Options: 1.2-2.0
+    // "editor.cursorBlinking": "smooth",              // Options: "blink", "smooth", "phase", "expand", "solid"
+    // "editor.cursorStyle": "line",                   // Options: "line", "block", "underline", "line-thin", "block-outline"
+    // "editor.minimap.enabled": false,                // Disable minimap
+    // "editor.renderWhitespace": "selection",         // Options: "none", "boundary", "selection", "trailing", "all"
+    // "editor.wordWrap": "on",                        // Options: "off", "on", "wordWrapColumn", "bounded"
+    
+    // --- Theme & Colors ---
+    // "workbench.colorTheme": "One Dark Pro",         // Options: any installed theme
+    // "workbench.iconTheme": "material-icon-theme",   // Options: any installed icon theme
+    
+    // --- Files & Saving ---
+    // "files.autoSave": "afterDelay",                 // Options: "off", "afterDelay", "onFocusChange", "onWindowChange"
+    // "files.autoSaveDelay": 1000,                    // Delay in ms (when autoSave is "afterDelay")
+    // "editor.formatOnSave": true,                    // Auto-format on save (global, already set for elixir)
+    // "editor.formatOnPaste": true,                   // Auto-format on paste
+    
+    // --- Terminal ---
+    // "terminal.integrated.fontSize": 13,             // Options: 10-24
+    // "terminal.integrated.cursorStyle": "line",      // Options: "block", "underline", "line"
+    // "terminal.integrated.scrollback": 10000,        // Lines of scrollback history
+    
+    // --- Cursor AI Advanced ---
+    // "cursor.chat.enableCodeLens": true,             // Show AI actions inline
+    // "cursor.chat.enableAutoComplete": true,         // AI-powered autocomplete
+    // "cursor.composer.enableMultiFile": true,        // Multi-file editing in composer
+    // "cursor.general.enableCopilot": false,          // Disable GitHub Copilot (use Cursor AI instead)
+    
+    // --- Performance ---
+    // "editor.suggestSelection": "first",             // Options: "first", "recentlyUsed", "recentlyUsedByPrefix"
+    // "editor.quickSuggestions": { "other": true, "comments": false, "strings": false },
+    // "files.watcherExclude": {                       // Exclude folders from file watcher
+    //     "**/node_modules/**": true,
+    //     "**/_build/**": true,
+    //     "**/deps/**": true
+    // },
+    
+    // --- Elixir/Erlang Advanced ---
+    // "elixirLS.suggestSpecs": false,                 // Disable spec suggestions
+    // "elixirLS.dialyzerEnabled": true,               // Enable Dialyzer (slower but better analysis)
+    // "elixirLS.dialyzerWarnOpts": [],                // Dialyzer warning options
+    // "elixirLS.enableTestLenses": true               // Show test CodeLens
+}

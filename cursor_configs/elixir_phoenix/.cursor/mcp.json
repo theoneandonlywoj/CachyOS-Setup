@@ -1,0 +1,29 @@
+{
+    "mcpServers": {
+      "tidewave": {
+        "url": "http://localhost:4000/tidewave/mcp",
+        "transport": "sse"
+      },
+      "hexdocs-mcp": {
+        "command": "npx",
+        "args": ["-y", "hexdocs-mcp@latest"]
+      },
+      "sequential-thinking": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+      },
+      "shadcn": {
+        "command": "npx",
+        "args": ["-y", "shadcn@latest", "mcp"]
+      },
+      "filesystem": {
+        "command": "npx",
+        "args": [
+          "-y",
+          "@modelcontextprotocol/server-filesystem",
+          "."
+        ]
+      }
+    }
+  }
+  

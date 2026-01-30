@@ -45,6 +45,8 @@ $PARENT_DIR/git_setup.fish
 $PARENT_DIR/emacs.fish
 $PARENT_DIR/doom_emacs.fish
 $PARENT_DIR/elixir_and_erlang.fish
+gh auth login
 $PARENT_DIR/elixirls.fish
+$PARENT_DIR/cursor.fish
 
 echo "Setup complete!"

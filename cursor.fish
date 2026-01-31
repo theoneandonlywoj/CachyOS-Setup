@@ -32,7 +32,7 @@ end
 
 # === 4. Download latest Cursor AppImage ===
 echo "🔽 Downloading latest Cursor AppImage..."
-wget -O $cursor_appimage "https://api2.cursor.sh/updates/download/golden/linux-x64/cursor/1.7"
+wget -O $cursor_appimage "https://api2.cursor.sh/updates/download/golden/linux-x64/cursor/2.4"
 if test $status -ne 0
     echo "❌ Failed to download Cursor AppImage. Aborting."
     exit 1
@@ -90,6 +90,10 @@ echo "🔗 Symlink updated: /usr/local/bin/cursor → $cursor_appimage"
 echo "🎉 Cursor installation/update complete!"
 echo "📦 Backup of old AppImage (if any) is located in $cursor_dir"
 echo "🖱 You can now launch Cursor from the application menu or by running 'cursor' in the terminal."
+echo ""
+echo "📋 Installed Cursor version:"
+cursor --version
+echo ""
 echo "💡 Tip: To move the Chat panel to the right, go to View → Appearance → Move Secondary Side Bar Right"
 echo ""
 echo "⌨️  Useful shortcuts:"

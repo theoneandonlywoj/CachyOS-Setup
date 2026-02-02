@@ -3,6 +3,8 @@
 ;; Place your private configuration here! Remember, you do not need to run 'doom
 ;; sync' after modifying this file!
 
+;; Force English locale for dates/times (e.g. day names like "Tuesday" in journal filenames and modeline)
+(setq system-time-locale "C")
 
 ;; Some functionality uses this to identify you, e.g. GPG configuration, email
 ;; clients, file templates and snippets. It is optional.

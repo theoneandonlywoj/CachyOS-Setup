@@ -1,10 +1,11 @@
-# === Makefile for Doom Emacs & Cursor config sync ===
+# === Makefile for Doom Emacs, Cursor & Tmux config sync ===
 # Moves existing configs to timestamped backups and installs new configs
 # Supports restore from the most recent backup
 
 .PHONY: all sync backup restore soft-test help \
         cursor-sync cursor-backup cursor-restore cursor-diff \
-        doom-sync doom-backup doom-restore
+        doom-sync doom-backup doom-restore \
+        tmux-sync tmux-backup tmux-restore tmux-diff
 
 # Generate timestamp in format YYYY_mm_dd_hh_MM
 TIMESTAMP := $(shell date +"%Y_%m_%d_%H_%M")
@@ -16,6 +17,11 @@ DOOM_BACKUP_DIR := $(HOME)/.doom.d_backup_$(TIMESTAMP)
 CURSOR_CONFIG_DIR := $(HOME)/.config/Cursor/User
 CURSOR_BACKUP_DIR := $(HOME)/.config/Cursor/User_backup_$(TIMESTAMP)
 CURSOR_REPO_DIR := ./.config/Cursor/User
+
+# Tmux paths
+TMUX_CONFIG := $(HOME)/.tmux.conf
+TMUX_BACKUP := $(HOME)/.tmux.conf_backup_$(TIMESTAMP)
+TPM_DIR := $(HOME)/.tmux/plugins/tpm
 
 # ============================================================
 # DEFAULT TARGET
@@ -118,15 +124,64 @@ doom-restore:
 	echo "✅ Restore complete from $$latest_backup"
 
 # ============================================================
+# TMUX CONFIGURATION
+# ============================================================
+
+tmux-sync: tmux-backup
+	@echo "📦 Copying tmux configuration..."
+	@cp ./.tmux.conf "$(TMUX_CONFIG)"
+	@echo "✅ Tmux configuration synced to $(TMUX_CONFIG)"
+	@# Install TPM (Tmux Plugin Manager) if not present
+	@if [ ! -d "$(TPM_DIR)" ]; then \
+		echo "📦 Installing Tmux Plugin Manager (TPM)..."; \
+		git clone https://github.com/tmux-plugins/tpm "$(TPM_DIR)"; \
+		echo "✅ TPM installed to $(TPM_DIR)"; \
+	else \
+		echo "ℹ️  TPM already installed at $(TPM_DIR)"; \
+	fi
+	@echo "💡 Reload tmux config: tmux source-file ~/.tmux.conf"
+	@echo "💡 Install plugins: prefix + I (Ctrl+a then Shift+i)"
+	@# Auto-reload if tmux is running
+	@if tmux list-sessions >/dev/null 2>&1; then \
+		echo "🔄 Reloading tmux configuration..."; \
+		tmux source-file "$(TMUX_CONFIG)" 2>/dev/null && echo "✅ Config reloaded!" || echo "⚠️  Reload manually with: tmux source-file ~/.tmux.conf"; \
+	fi
+
+tmux-backup:
+	@if [ -f "$(TMUX_CONFIG)" ]; then \
+		echo "💾 Backing up existing ~/.tmux.conf to $(TMUX_BACKUP)..."; \
+		cp "$(TMUX_CONFIG)" "$(TMUX_BACKUP)"; \
+		echo "✅ Backup created at $(TMUX_BACKUP)"; \
+	else \
+		echo "ℹ️  No existing ~/.tmux.conf found — skipping backup."; \
+	fi
+
+tmux-restore:
+	@echo "♻️  Restoring the most recent tmux backup..."
+	@latest_backup=$$(ls -t $(HOME)/.tmux.conf_backup_* 2>/dev/null | head -n 1); \
+	if [ -z "$$latest_backup" ]; then \
+		echo "❌ No tmux backups found. Cannot restore."; \
+		exit 1; \
+	fi; \
+	echo "♻️  Restoring from $$latest_backup..."; \
+	cp "$$latest_backup" "$(TMUX_CONFIG)"; \
+	echo "✅ Tmux restore complete from $$latest_backup"; \
+	echo "💡 Reload config: tmux source-file ~/.tmux.conf"
+
+tmux-diff:
+	@echo "📊 Comparing tmux configurations..."
+	@diff -u "$(TMUX_CONFIG)" "./.tmux.conf" 2>/dev/null || echo "(files differ or missing)"
+
+# ============================================================
 # CONVENIENCE ALIASES
 # ============================================================
 
-sync: doom-sync cursor-sync
+sync: doom-sync cursor-sync tmux-sync
 	@echo "✅ All configurations synced!"
 
-backup: doom-backup cursor-backup
+backup: doom-backup cursor-backup tmux-backup
 
-restore: doom-restore cursor-restore
+restore: doom-restore cursor-restore tmux-restore
 
 # ============================================================
 # TESTING
@@ -259,7 +314,7 @@ help:
 	@echo "=================================="
 	@echo
 	@echo "ALL:"
-	@echo "  make all              Sync both Doom Emacs and Cursor configs"
+	@echo "  make all              Sync Doom Emacs and Cursor configs"
 	@echo
 	@echo "CURSOR IDE:"
 	@echo "  make cursor-sync      Backup and sync Cursor settings/keybindings"
@@ -272,13 +327,19 @@ help:
 	@echo "  make doom-backup      Backup current ~/.doom.d"
 	@echo "  make doom-restore     Restore most recent Doom backup"
 	@echo
+	@echo "TMUX:"
+	@echo "  make tmux-sync        Backup and sync tmux config, install TPM"
+	@echo "  make tmux-backup      Backup current ~/.tmux.conf"
+	@echo "  make tmux-restore     Restore most recent tmux backup"
+	@echo "  make tmux-diff        Show differences between repo and installed"
+	@echo
 	@echo "TESTING:"
 	@echo "  make soft-test        Validate Fish scripts (syntax, structure)"
 	@echo
 	@echo "SHORTCUTS:"
-	@echo "  make sync             Sync both Doom Emacs and Cursor (alias for 'all')"
-	@echo "  make backup           Backup both Doom Emacs and Cursor"
-	@echo "  make restore          Restore both from most recent backups"
+	@echo "  make sync             Sync all configs (Doom, Cursor, Tmux)"
+	@echo "  make backup           Backup all configs"
+	@echo "  make restore          Restore all from most recent backups"
 	@echo
 	@echo "HELP:"
 	@echo "  make help             Show this help message"

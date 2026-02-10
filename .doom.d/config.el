@@ -134,6 +134,16 @@
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
 
+;; Claude Code IDE integration
+(use-package! claude-code-ide
+  :config
+  (setq claude-code-ide-terminal-backend 'eat)
+  (claude-code-ide-emacs-tools-setup))
+
+(map! :leader
+      (:prefix ("c" . "code")
+       :desc "Claude Code menu" "l" #'claude-code-ide-menu))
+
 ;; Second Brain with org-mode
 ;; 1. Directory Setup
 (dolist (dir '("~/Desktop/Repos/Second-Brain/1.Notes"

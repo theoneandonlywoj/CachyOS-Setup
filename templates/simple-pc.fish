@@ -27,5 +27,8 @@ $PARENT_DIR/vlc.fish
 $PARENT_DIR/wireshark.fish
 $PARENT_DIR/yt_dlp.fish
 $PARENT_DIR/git_setup.fish
+$PARENT_DIR/mise.fish
+$PARENT_DIR/nodejs.fish
+$PARENT_DIR/elixir_and_erlang.fish
 
 echo "Simple PC: Setup complete! 🎉"

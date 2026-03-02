@@ -142,7 +142,39 @@
 
 (map! :leader
       (:prefix ("c" . "code")
-       :desc "Claude Code menu" "l" #'claude-code-ide-menu))
+       :desc "Claude Code menu" "C" #'claude-code-ide-menu))
+
+;; Elixir + ElixirLS configuration
+(after! lsp-mode
+  ;; Use system-installed ElixirLS (installed via pacman/yay)
+  (setq lsp-elixir-ls-server-dir "/usr/lib/elixir-ls/")
+
+  ;; Disable Dialyzer by default (heavy on resources, enable when needed)
+  (setq lsp-elixir-dialyzer-enabled nil)
+
+  ;; Exclude build artifacts from LSP file watchers
+  (dolist (dir '("[/\\\\]_build$"
+                 "[/\\\\]deps$"
+                 "[/\\\\]\\.elixir_ls$"))
+    (add-to-list 'lsp-file-watch-ignored-directories dir)))
+
+;; Exclude Elixir build dirs from project search/grep
+(after! projectile
+  (dolist (dir '("_build" "deps" ".elixir_ls"))
+    (add-to-list 'projectile-globally-ignored-directories dir)))
+
+;; Elixir keybindings under SPC m
+(map! :after elixir-mode
+      :map elixir-mode-map
+      :localleader
+      (:prefix ("i" . "iex")
+       :desc "IEx in project root" "i" #'+eval/open-repl-other-window
+       :desc "Send line to IEx"    "l" (cmd! (evil-visual-line) (+eval/send-region-to-repl))
+       :desc "Send region to IEx"  "r" #'+eval/send-region-to-repl)
+      (:prefix ("m" . "mix")
+       :desc "mix compile"   "c" (cmd! (compile "mix compile"))
+       :desc "mix deps.get"  "d" (cmd! (compile "mix deps.get"))
+       :desc "mix format"    "f" (cmd! (compile "mix format"))))
 
 ;; Second Brain with org-mode
 ;; 1. Directory Setup

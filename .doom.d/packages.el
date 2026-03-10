@@ -55,3 +55,10 @@
 
 ;; UI for Second Brain
 (package! org-roam-ui)
+
+;; Terminal emulator
+(package! eat)
+
+;; Claude Code IDE integration
+(package! claude-code-ide
+  :recipe (:host github :repo "manzaltu/claude-code-ide.el"))

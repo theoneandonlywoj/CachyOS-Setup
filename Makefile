@@ -5,7 +5,8 @@
 .PHONY: all sync backup restore soft-test help \
         cursor-sync cursor-backup cursor-restore cursor-diff \
         doom-sync doom-backup doom-restore \
-        tmux-sync tmux-backup tmux-restore tmux-diff
+        tmux-sync tmux-backup tmux-restore tmux-diff \
+        openclaw-sync openclaw-backup openclaw-restore
 
 # Generate timestamp in format YYYY_mm_dd_hh_MM
 TIMESTAMP := $(shell date +"%Y_%m_%d_%H_%M")
@@ -22,6 +23,11 @@ CURSOR_REPO_DIR := ./.config/Cursor/User
 TMUX_CONFIG := $(HOME)/.tmux.conf
 TMUX_BACKUP := $(HOME)/.tmux.conf_backup_$(TIMESTAMP)
 TPM_DIR := $(HOME)/.tmux/plugins/tpm
+
+# OpenClaw paths
+OPENCLAW_DIR := $(HOME)/.openclaw
+OPENCLAW_REPO_DIR := ./.openclaw
+OPENCLAW_BACKUP_DIR := $(HOME)/.openclaw_backup_$(TIMESTAMP)
 
 # ============================================================
 # DEFAULT TARGET
@@ -173,15 +179,93 @@ tmux-diff:
 	@diff -u "$(TMUX_CONFIG)" "./.tmux.conf" 2>/dev/null || echo "(files differ or missing)"
 
 # ============================================================
+# OPENCLAW CONFIGURATION
+# ============================================================
+
+openclaw-backup:
+	@echo "📦 Saving OpenClaw config to repo..."
+	@if [ ! -d "$(OPENCLAW_DIR)" ]; then \
+		echo "❌ No ~/.openclaw/ found — nothing to save."; \
+		exit 1; \
+	fi
+	@mkdir -p "$(OPENCLAW_REPO_DIR)"
+	@# Main config
+	@cp "$(OPENCLAW_DIR)/openclaw.json" "$(OPENCLAW_REPO_DIR)/openclaw.json"
+	@# Auth profiles
+	@mkdir -p "$(OPENCLAW_REPO_DIR)/agents/main/agent"
+	@cp "$(OPENCLAW_DIR)/agents/main/agent/auth-profiles.json" \
+		"$(OPENCLAW_REPO_DIR)/agents/main/agent/auth-profiles.json" 2>/dev/null || true
+	@# Cron jobs
+	@mkdir -p "$(OPENCLAW_REPO_DIR)/cron"
+	@cp "$(OPENCLAW_DIR)/cron/jobs.json" "$(OPENCLAW_REPO_DIR)/cron/jobs.json" 2>/dev/null || true
+	@# Paired devices
+	@mkdir -p "$(OPENCLAW_REPO_DIR)/devices"
+	@cp "$(OPENCLAW_DIR)/devices/paired.json" "$(OPENCLAW_REPO_DIR)/devices/paired.json" 2>/dev/null || true
+	@# Identity (device keypair + auth)
+	@mkdir -p "$(OPENCLAW_REPO_DIR)/identity"
+	@cp "$(OPENCLAW_DIR)/identity/"*.json "$(OPENCLAW_REPO_DIR)/identity/" 2>/dev/null || true
+	@# Agent memory database
+	@mkdir -p "$(OPENCLAW_REPO_DIR)/memory"
+	@cp "$(OPENCLAW_DIR)/memory/main.sqlite" "$(OPENCLAW_REPO_DIR)/memory/main.sqlite" 2>/dev/null || true
+	@# Workspace config (*.md files + memory/*.md, skip .git/ and .openclaw/)
+	@mkdir -p "$(OPENCLAW_REPO_DIR)/workspace/memory"
+	@cp "$(OPENCLAW_DIR)/workspace/"*.md "$(OPENCLAW_REPO_DIR)/workspace/" 2>/dev/null || true
+	@cp "$(OPENCLAW_DIR)/workspace/memory/"*.md "$(OPENCLAW_REPO_DIR)/workspace/memory/" 2>/dev/null || true
+	@echo "✅ OpenClaw config saved to $(OPENCLAW_REPO_DIR)"
+
+openclaw-sync:
+	@echo "📦 Deploying OpenClaw config from repo..."
+	@if [ ! -d "$(OPENCLAW_REPO_DIR)" ]; then \
+		echo "❌ No ./.openclaw/ in repo — run 'make openclaw-backup' first."; \
+		exit 1; \
+	fi
+	@if [ -d "$(OPENCLAW_DIR)" ]; then \
+		echo "💾 Creating backup at $(OPENCLAW_BACKUP_DIR)..."; \
+		cp -r "$(OPENCLAW_DIR)" "$(OPENCLAW_BACKUP_DIR)"; \
+		echo "✅ Backup created"; \
+	fi
+	@mkdir -p "$(OPENCLAW_DIR)"
+	@cp "$(OPENCLAW_REPO_DIR)/openclaw.json" "$(OPENCLAW_DIR)/openclaw.json"
+	@mkdir -p "$(OPENCLAW_DIR)/agents/main/agent"
+	@cp "$(OPENCLAW_REPO_DIR)/agents/main/agent/auth-profiles.json" \
+		"$(OPENCLAW_DIR)/agents/main/agent/auth-profiles.json" 2>/dev/null || true
+	@mkdir -p "$(OPENCLAW_DIR)/cron"
+	@cp "$(OPENCLAW_REPO_DIR)/cron/jobs.json" "$(OPENCLAW_DIR)/cron/jobs.json" 2>/dev/null || true
+	@mkdir -p "$(OPENCLAW_DIR)/devices"
+	@cp "$(OPENCLAW_REPO_DIR)/devices/paired.json" "$(OPENCLAW_DIR)/devices/paired.json" 2>/dev/null || true
+	@mkdir -p "$(OPENCLAW_DIR)/identity"
+	@cp "$(OPENCLAW_REPO_DIR)/identity/"*.json "$(OPENCLAW_DIR)/identity/" 2>/dev/null || true
+	@mkdir -p "$(OPENCLAW_DIR)/memory"
+	@cp "$(OPENCLAW_REPO_DIR)/memory/main.sqlite" "$(OPENCLAW_DIR)/memory/main.sqlite" 2>/dev/null || true
+	@mkdir -p "$(OPENCLAW_DIR)/workspace/memory"
+	@cp "$(OPENCLAW_REPO_DIR)/workspace/"*.md "$(OPENCLAW_DIR)/workspace/" 2>/dev/null || true
+	@cp "$(OPENCLAW_REPO_DIR)/workspace/memory/"*.md "$(OPENCLAW_DIR)/workspace/memory/" 2>/dev/null || true
+	@echo "✅ OpenClaw config deployed to $(OPENCLAW_DIR)"
+
+openclaw-restore:
+	@echo "♻️  Restoring the most recent OpenClaw backup..."
+	@latest_backup=$$(ls -d $(HOME)/.openclaw_backup_* 2>/dev/null | sort -r | head -n 1); \
+	if [ -z "$$latest_backup" ]; then \
+		echo "❌ No OpenClaw backups found. Cannot restore."; \
+		exit 1; \
+	fi; \
+	if [ -d "$(OPENCLAW_DIR)" ]; then \
+		rm -rf "$(OPENCLAW_DIR)"; \
+	fi; \
+	echo "♻️  Restoring from $$latest_backup..."; \
+	mv "$$latest_backup" "$(OPENCLAW_DIR)"; \
+	echo "✅ OpenClaw restore complete from $$latest_backup"
+
+# ============================================================
 # CONVENIENCE ALIASES
 # ============================================================
 
-sync: doom-sync cursor-sync tmux-sync
+sync: doom-sync cursor-sync tmux-sync openclaw-sync
 	@echo "✅ All configurations synced!"
 
-backup: doom-backup cursor-backup tmux-backup
+backup: doom-backup cursor-backup tmux-backup openclaw-backup
 
-restore: doom-restore cursor-restore tmux-restore
+restore: doom-restore cursor-restore tmux-restore openclaw-restore
 
 # ============================================================
 # TESTING
@@ -332,6 +416,11 @@ help:
 	@echo "  make tmux-backup      Backup current ~/.tmux.conf"
 	@echo "  make tmux-restore     Restore most recent tmux backup"
 	@echo "  make tmux-diff        Show differences between repo and installed"
+	@echo
+	@echo "OPENCLAW:"
+	@echo "  make openclaw-backup  Save ~/.openclaw/ config to repo"
+	@echo "  make openclaw-sync    Deploy repo config to ~/.openclaw/ (with backup)"
+	@echo "  make openclaw-restore Restore most recent OpenClaw backup"
 	@echo
 	@echo "TESTING:"
 	@echo "  make soft-test        Validate Fish scripts (syntax, structure)"

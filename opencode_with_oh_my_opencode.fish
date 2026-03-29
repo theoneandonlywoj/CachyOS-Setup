@@ -41,12 +41,33 @@ else
     echo "Bun is already installed."
 end
 
-# === 2. Install OpenCode via official installer ===
-echo "Installing OpenCode..."
-curl -fsSL https://opencode.ai/install | bash
-if test $status -ne 0
-    echo "OpenCode installation failed. Aborting."
-    exit 1
+# === 2. Install OpenCode ===
+# Check if OpenCode is already installed
+if command -v opencode > /dev/null
+    echo "OpenCode is already installed."
+else
+    # Try pacman first (Arch Linux)
+    if command -v pacman > /dev/null
+        echo "Installing OpenCode via pacman..."
+        sudo pacman -S opencode
+        if test $status -ne 0
+            # Fallback to official installer
+            echo "Pacman install failed, trying official installer..."
+            curl -fsSL https://opencode.ai/install | bash
+            if test $status -ne 0
+                echo "OpenCode installation failed. Aborting."
+                exit 1
+            end
+        end
+    else
+        # Use official installer for other distros
+        echo "Installing OpenCode via official installer..."
+        curl -fsSL https://opencode.ai/install | bash
+        if test $status -ne 0
+            echo "OpenCode installation failed. Aborting."
+            exit 1
+        end
+    end
 end
 
 # Reload PATH to pick up OpenCode binary
@@ -101,13 +122,24 @@ if test -f $oc_config
     end
 end
 
+# Run oh-my-opencode doctor for detailed verification
+echo
+echo "Running oh-my-opencode doctor..."
+if command -v oh-my-opencode > /dev/null
+    oh-my-opencode doctor --verbose
+else
+    bunx oh-my-opencode doctor --verbose
+end
+
 echo
 echo "OpenCode & oh-my-opencode setup complete!"
 echo
 echo "Important:"
-echo "   Make sure you have API keys configured for your chosen providers."
-echo "   For Claude, set ANTHROPIC_API_KEY in your environment."
-echo "   For OpenAI, set OPENAI_API_KEY in your environment."
+echo "   You must authenticate with your providers using:"
+echo "   opencode auth login"
+echo
+echo "   Then select your provider(s) and complete OAuth authentication."
+echo "   Supported providers: Anthropic (Claude), Google (Gemini), GitHub (Copilot)"
 echo
 echo "Quick start:"
 echo "   cd /path/to/your/project"

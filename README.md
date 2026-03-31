@@ -21,7 +21,7 @@ Use these scripts to install common developer tools on CachyOS/Arch. Each script
 Download this repository:
 
 ```sh
-curl -L https://github.com/CachyOS-Setup/CachyOS-Setup/archive/refs/heads/master.zip -o CachyOS-Setup.zip && unzip CachyOS-Setup.zip && cd CachyOS-Setup-master
+curl -L https://github.com/theoneandonlywoj/CachyOS-Setup/archive/refs/heads/master.zip -o CachyOS-Setup.zip && unzip CachyOS-Setup.zip && cd CachyOS-Setup-master
 ```
 
 ## 🧰 Prerequisites

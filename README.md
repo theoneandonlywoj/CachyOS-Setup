@@ -18,6 +18,12 @@ Automated Fish shell scripts to set up a development environment on CachyOS (Arc
 
 Use these scripts to install common developer tools on CachyOS/Arch. Each script is idempotent where possible and safe to re-run.
 
+Download this repository:
+
+```sh
+curl -L https://github.com/CachyOS-Setup/CachyOS-Setup/archive/refs/heads/master.zip -o CachyOS-Setup.zip && unzip CachyOS-Setup.zip && cd CachyOS-Setup-master
+```
+
 ## 🧰 Prerequisites
 
 - CachyOS (Arch Linux–based)

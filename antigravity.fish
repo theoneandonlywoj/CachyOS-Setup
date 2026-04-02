@@ -29,7 +29,6 @@ echo "🔍 Checking for required dependencies..."
 set -l missing_deps
 
 command -q curl; or set -a missing_deps curl
-command -q gpg; or set -a missing_deps gnupg
 
 if test (count $missing_deps) -gt 0
     echo "📦 Installing missing dependencies: $missing_deps"
@@ -40,76 +39,44 @@ if test (count $missing_deps) -gt 0
     end
 end
 
-# === 3. Set up Google Antigravity repository ===
-echo "📦 Setting up Google Antigravity repository..."
+# === 3. Install Antigravity from AUR ===
+echo "📦 Installing Antigravity from AUR..."
 
-# Create keyrings directory if it doesn't exist
-sudo mkdir -p /etc/pacman.d/gnupg
+# Check for AUR helper
+command -q paru; or command -q yay; or begin
+    echo "❌ Neither paru nor yay is installed. Please install an AUR helper first."
+    echo "💡 Install paru: sudo pacman -S --needed base-devel git && cd /tmp && git clone https://aur.archlinux.org/paru.git && cd paru && makepkg -si"
+    exit 1
+end
 
-# Download and import GPG key
-echo "🔑 Importing GPG key..."
-curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | sudo gpg --dearmor -o /etc/pacman.d/gnupg/antigravity-repo-key.gpg 2>/dev/null
+# Handle gcc-libs split package transition (libgcc/libstdc++ replace gcc-libs)
+if pacman -Q gcc-libs &>/dev/null
+    echo "🔧 Handling gcc-libs package split (libgcc/libstdc++)..."
+    sudo pacman -Syu --noconfirm \
+        --overwrite '/usr/lib/libgcc_s*' \
+        --overwrite '/usr/lib/libstdc++*' \
+        --overwrite '/usr/share/licenses/gcc-libs/*' \
+        --overwrite '/usr/share/locale/*/LC_MESSAGES/libstdc++.mo'
+end
+
+if command -q paru
+    echo "📦 Installing Antigravity from AUR using paru..."
+    paru -S --needed --noconfirm antigravity
+else if command -q yay
+    echo "📦 Installing Antigravity from AUR using yay..."
+    yay -S --needed --noconfirm antigravity
+end
 
 if test $status -ne 0
-    echo "⚠ Failed to import GPG key via curl, trying alternative method..."
-    # Alternative: try AUR package if repository setup fails
-    echo "💡 Attempting to install from AUR instead..."
-    command -q yay; or command -q paru; or begin
-        echo "❌ Neither yay nor paru is installed. Please install an AUR helper first."
-        echo "💡 Install yay: sudo pacman -S --needed base-devel git && cd /tmp && git clone https://aur.archlinux.org/yay.git && cd yay && makepkg -si"
-        exit 1
-    end
-    
-    if command -q yay
-        echo "📦 Installing Antigravity from AUR using yay..."
-        yay -S --needed --noconfirm antigravity
-    else if command -q paru
-        echo "📦 Installing Antigravity from AUR using paru..."
-        paru -S --needed --noconfirm antigravity
-    end
-    
-    if test $status -ne 0
-        echo "❌ Failed to install Antigravity from AUR."
-        echo "💡 You may need to install it manually or check if the package exists."
-        exit 1
-    end
-    
-    echo "✅ Antigravity installed from AUR."
-else
-    # Create custom repository configuration for Arch
-    echo "📝 Creating repository configuration..."
-    printf '[antigravity]\nSigLevel = Optional TrustAll\nServer = https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev/antigravity-debian\n' | sudo tee /etc/pacman.d/antigravity.conf > /dev/null
-    
-    # Note: The above repository is for Debian/Ubuntu, so we'll need to use AUR or manual installation
-    echo "⚠ Google's repository is designed for Debian/Ubuntu systems."
-    echo "💡 For Arch-based systems like CachyOS, we'll use AUR instead."
-    
-    # Check for AUR helper
-    command -q yay; or command -q paru; or begin
-        echo "❌ Neither yay nor paru is installed. Please install an AUR helper first."
-        echo "💡 Install yay: sudo pacman -S --needed base-devel git && cd /tmp && git clone https://aur.archlinux.org/yay.git && cd yay && makepkg -si"
-        exit 1
-    end
-    
-    if command -q yay
-        echo "📦 Installing Antigravity from AUR using yay..."
-        yay -S --needed --noconfirm antigravity
-    else if command -q paru
-        echo "📦 Installing Antigravity from AUR using paru..."
-        paru -S --needed --noconfirm antigravity
-    end
-    
-    if test $status -ne 0
-        echo "❌ Failed to install Antigravity."
-        echo "💡 The AUR package may not exist yet. You may need to:"
-        echo "   1. Install manually from source"
-        echo "   2. Check https://antigravity.google/download/linux for updates"
-        echo "   3. Use AppImage or other distribution method if available"
-        exit 1
-    end
-    
-    echo "✅ Antigravity installed."
+    echo "❌ Failed to install Antigravity."
+    echo "💡 The AUR package may not exist yet. You may need to:"
+    echo "   1. Install manually from source"
+    echo "   2. Check https://antigravity.google/download/linux for updates"
+    echo "   3. Use AppImage or other distribution method if available"
+    exit 1
 end
+
+echo "✅ Antigravity installed."
 
 # === 4. Verify installation ===
 echo

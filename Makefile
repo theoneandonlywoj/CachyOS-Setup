@@ -5,7 +5,8 @@
 .PHONY: all sync backup restore soft-test help \
         cursor-sync cursor-backup cursor-restore cursor-diff \
         doom-sync doom-backup doom-restore \
-        tmux-sync tmux-backup tmux-restore tmux-diff
+        tmux-sync tmux-backup tmux-restore tmux-diff \
+        opencode-sync opencode-backup opencode-restore opencode-diff
 
 # Generate timestamp in format YYYY_mm_dd_hh_MM
 TIMESTAMP := $(shell date +"%Y_%m_%d_%H_%M")
@@ -23,11 +24,16 @@ TMUX_CONFIG := $(HOME)/.tmux.conf
 TMUX_BACKUP := $(HOME)/.tmux.conf_backup_$(TIMESTAMP)
 TPM_DIR := $(HOME)/.tmux/plugins/tpm
 
+# Elixir/Phoenix Opencode paths
+OPENCODE_CONFIG_DIR := $(HOME)/.opencode
+OPENCODE_BACKUP_DIR := $(HOME)/.opencode_backup_$(TIMESTAMP)
+OPENCODE_REPO_DIR := ./.opencode
+
 # ============================================================
 # DEFAULT TARGET
 # ============================================================
 
-all: doom-sync cursor-sync
+all: doom-sync cursor-sync opencode-sync
 	@echo "✅ All configurations synced!"
 
 # ============================================================
@@ -173,15 +179,57 @@ tmux-diff:
 	@diff -u "$(TMUX_CONFIG)" "./.tmux.conf" 2>/dev/null || echo "(files differ or missing)"
 
 # ============================================================
+# OPENCODE CONFIGURATION (Elixir/Phoenix)
+# ============================================================
+
+opencode-sync: opencode-backup
+	@echo "📦 Copying Opencode configuration for Elixir/Phoenix..."
+	@mkdir -p "$(OPENCODE_CONFIG_DIR)"
+	@cp "$(OPENCODE_REPO_DIR)/opencode.jsonc" "$(OPENCODE_CONFIG_DIR)/opencode.jsonc"
+	@echo "✅ Opencode config synced to $(OPENCODE_CONFIG_DIR)"
+	@echo "💡 Restart Opencode to apply changes"
+
+opencode-backup:
+	@if [ -f "$(OPENCODE_CONFIG_DIR)/opencode.jsonc" ] || [ -d "$(OPENCODE_CONFIG_DIR)" ]; then \
+		echo "💾 Backing up existing Opencode config to $(OPENCODE_BACKUP_DIR)..."; \
+		mkdir -p "$(OPENCODE_BACKUP_DIR)"; \
+		if [ -f "$(OPENCODE_CONFIG_DIR)/opencode.jsonc" ]; then \
+			cp "$(OPENCODE_CONFIG_DIR)/opencode.jsonc" "$(OPENCODE_BACKUP_DIR)/opencode.jsonc"; \
+		fi; \
+		echo "✅ Backup created at $(OPENCODE_BACKUP_DIR)"; \
+	else \
+		echo "ℹ️ No existing Opencode config found — skipping backup."; \
+	fi
+
+opencode-restore:
+	@echo "♻️  Restoring the most recent Opencode backup..."
+	@latest_backup=$$(ls -d $(HOME)/.opencode_backup_* 2>/dev/null | sort -r | head -n 1); \
+	if [ -z "$$latest_backup" ]; then \
+		echo "❌ No Opencode backups found. Cannot restore."; \
+		exit 1; \
+	fi; \
+	echo "♻️  Restoring from $$latest_backup..."; \
+	if [ -f "$$latest_backup/opencode.jsonc" ]; then \
+		mkdir -p "$(OPENCODE_CONFIG_DIR)"; \
+		cp "$$latest_backup/opencode.jsonc" "$(OPENCODE_CONFIG_DIR)/opencode.jsonc"; \
+	fi; \
+	echo "✅ Opencode restore complete from $$latest_backup"; \
+	echo "💡 Restart Opencode to apply changes"
+
+opencode-diff:
+	@echo "📊 Comparing Opencode configurations..."
+	@diff -u "$(OPENCODE_CONFIG_DIR)/opencode.jsonc" "$(OPENCODE_REPO_DIR)/opencode.jsonc" 2>/dev/null || echo "(files differ or missing)"
+
+# ============================================================
 # CONVENIENCE ALIASES
 # ============================================================
 
-sync: doom-sync cursor-sync tmux-sync
+sync: doom-sync cursor-sync tmux-sync opencode-sync
 	@echo "✅ All configurations synced!"
 
-backup: doom-backup cursor-backup tmux-backup
+backup: doom-backup cursor-backup tmux-backup opencode-backup
 
-restore: doom-restore cursor-restore tmux-restore
+restore: doom-restore cursor-restore tmux-restore opencode-restore
 
 # ============================================================
 # TESTING
@@ -314,7 +362,7 @@ help:
 	@echo "=================================="
 	@echo
 	@echo "ALL:"
-	@echo "  make all              Sync Doom Emacs and Cursor configs"
+	@echo "  make all              Sync Doom Emacs, Cursor, and Elixir configs"
 	@echo
 	@echo "CURSOR IDE:"
 	@echo "  make cursor-sync      Backup and sync Cursor settings/keybindings"
@@ -333,11 +381,17 @@ help:
 	@echo "  make tmux-restore     Restore most recent tmux backup"
 	@echo "  make tmux-diff        Show differences between repo and installed"
 	@echo
+	@echo "OPENCODE:"
+	@echo "  make opencode-sync      Backup and sync Opencode config (Elixir/Phoenix)"
+	@echo "  make opencode-backup   Backup current ~/.opencode"
+	@echo "  make opencode-restore  Restore most recent Opencode backup"
+	@echo "  make opencode-diff     Show differences between repo and installed"
+	@echo
 	@echo "TESTING:"
 	@echo "  make soft-test        Validate Fish scripts (syntax, structure)"
 	@echo
 	@echo "SHORTCUTS:"
-	@echo "  make sync             Sync all configs (Doom, Cursor, Tmux)"
+	@echo "  make sync             Sync all configs (Doom, Cursor, Tmux, Elixir)"
 	@echo "  make backup           Backup all configs"
 	@echo "  make restore          Restore all from most recent backups"
 	@echo

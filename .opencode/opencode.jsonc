@@ -37,16 +37,6 @@
       }
     }
   },
-  "skills": {
-    "paths": [
-      ".opencode/skills/elixir",
-      ".opencode/skills/phoenix",
-      ".opencode/skills/liveview",
-      ".opencode/skills/nerves",
-      ".opencode/skills/ecto",
-      ".opencode/skills/broadway"
-    ]
-  },
   "autoupdate": "notify",
   "snapshot": true
 }

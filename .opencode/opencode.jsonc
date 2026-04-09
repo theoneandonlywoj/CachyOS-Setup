@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "default_agent": "build",
+  "default_agent": "phoenix",
   "watcher": {
     "ignore": [
       "_build",
@@ -10,61 +10,17 @@
       "priv/static/cache"
     ]
   },
-  "agent": {
-    "build": {
-      "permission": {
-        "edit": {
-          "**/*.ex": "allow",
-          "**/*.exs": "allow",
-          "**/*.heex": "allow",
-          "**/*.eex": "allow",
-          "**/priv/*": "ask",
-          "config/*.exs": "allow",
-          "**/*.fish": "allow"
-        },
-        "bash": {
-          "mix": "allow",
-          "iex": "allow",
-          "Phoenix": "allow",
-          "nerves.*": "allow",
-          "mix firmware": "allow",
-          "mix burn": "allow",
-          "fish": "allow",
-          "make": "allow",
-          "chmod": "allow",
-          "sudo": "ask"
-        },
-        "glob": {
-          "**/*.ex": "allow",
-          "**/*.exs": "allow",
-          "**/*.heex": "allow",
-          "**/*.fish": "allow"
-        }
-      }
-    }
+  "agents": {
+    "phoenix": ".opencode/agents/phoenix.md",
+    "nerves": ".opencode/agents/nerves.md"
   },
   "autoupdate": "notify",
   "snapshot": true,
-  "mcp": {
-    "tidewave": {
-      "type": "remote",
-      "url": "http://127.0.0.1:4000/tidewave/mcp"
-    }
-  },
   "compaction": {
     "enabled": true,
     "strategy": "auto"
   },
   "share": {
     "enabled": false
-  },
-  "command": {
-    "gen_migration": ".opencode/skills/phoenix/gen_migration/SKILL.md",
-    "gen_schema": ".opencode/skills/phoenix/gen_schema/SKILL.md",
-    "gen_context": ".opencode/skills/phoenix/gen_context/SKILL.md",
-    "liveview": ".opencode/skills/phoenix/liveview/SKILL.md",
-    "gen_test": ".opencode/skills/phoenix/gen_test/SKILL.md",
-    "dialyzer-debug": ".opencode/skills/elixir/dialyzer-debug/SKILL.md",
-    "credo-debug": ".opencode/skills/elixir/credo-debug/SKILL.md"
   }
 }

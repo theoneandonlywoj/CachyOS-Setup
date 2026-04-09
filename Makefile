@@ -220,6 +220,22 @@ opencode-diff:
 	@echo "📊 Comparing Opencode configurations..."
 	@diff -u "$(OPENCODE_CONFIG_DIR)/opencode.jsonc" "$(OPENCODE_REPO_DIR)/opencode.jsonc" 2>/dev/null || echo "(files differ or missing)"
 
+opencode-sync-to:
+	@if [ -z "$(REPO_DIR)" ]; then \
+		echo "❌ REPO_DIR is required. Usage: make opencode-sync-to REPO_DIR=/path/to/repo"; \
+		exit 1; \
+	fi
+	@if [ -d "$(REPO_DIR)/.opencode" ]; then \
+		echo "💾 Backing up existing .opencode at $(REPO_DIR)/.opencode..."; \
+		BACKUP_DIR="$(REPO_DIR)/.opencode_backup_$(TIMESTAMP)"; \
+		mv "$(REPO_DIR)/.opencode" "$$BACKUP_DIR"; \
+		echo "✅ Backup created at $$BACKUP_DIR"; \
+	fi
+	@echo "📦 Syncing .opencode config to $(REPO_DIR)/.opencode..."
+	@mkdir -p "$(REPO_DIR)/.opencode"
+	@cp -r "$(OPENCODE_REPO_DIR)"/* "$(REPO_DIR)/.opencode/"
+	@echo "✅ .opencode config synced to $(REPO_DIR)/.opencode"
+
 # ============================================================
 # CONVENIENCE ALIASES
 # ============================================================
@@ -386,6 +402,7 @@ help:
 	@echo "  make opencode-backup   Backup current ~/.opencode"
 	@echo "  make opencode-restore  Restore most recent Opencode backup"
 	@echo "  make opencode-diff     Show differences between repo and installed"
+	@echo "  make opencode-sync-to  Sync .opencode config to a repo (REPO_DIR=required)"
 	@echo
 	@echo "TESTING:"
 	@echo "  make soft-test        Validate Fish scripts (syntax, structure)"

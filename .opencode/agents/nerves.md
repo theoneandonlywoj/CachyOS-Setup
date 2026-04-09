@@ -25,8 +25,9 @@ permission:
 mcp: {}
 
 command:
-  dialyzer-debug: .opencode/skills/elixir/dialyzer-debug/SKILL.md
-  credo-debug: .opencode/skills/elixir/credo-debug/SKILL.md
+  dialyzer-debug: .opencode/skills/dialyzer-debug/SKILL.md
+  credo-debug: .opencode/skills/credo-debug/SKILL.md
+  permissions-update: .opencode/commands/permissions-update.md
   review: .opencode/commands/review.md
   handoff: .opencode/commands/handoff.md
   test: .opencode/commands/test.md

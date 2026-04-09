@@ -28,15 +28,16 @@ mcp:
     url: http://127.0.0.1:4000/tidewave/mcp
 
 command:
-  gen_context: .opencode/skills/phoenix/gen_context/SKILL.md
-  gen_migration: .opencode/skills/phoenix/gen_migration/SKILL.md
-  gen_schema: .opencode/skills/phoenix/gen_schema/SKILL.md
-  gen_test: .opencode/skills/phoenix/gen_test/SKILL.md
-  liveview: .opencode/skills/phoenix/liveview/SKILL.md
-  tidewave: .opencode/skills/phoenix/tidewave/SKILL.md
+  gen-context: .opencode/skills/gen-context/SKILL.md
+  gen-migration: .opencode/skills/gen-migration/SKILL.md
+  gen-schema: .opencode/skills/gen-schema/SKILL.md
+  gen-test: .opencode/skills/gen-test/SKILL.md
+  liveview: .opencode/skills/liveview/SKILL.md
+  tidewave: .opencode/skills/tidewave/SKILL.md
   tidewave-status: .opencode/commands/tidewave-status.md
-  dialyzer-debug: .opencode/skills/elixir/dialyzer-debug/SKILL.md
-  credo-debug: .opencode/skills/elixir/credo-debug/SKILL.md
+  dialyzer-debug: .opencode/skills/dialyzer-debug/SKILL.md
+  credo-debug: .opencode/skills/credo-debug/SKILL.md
+  permissions-update: .opencode/commands/permissions-update.md
   review: .opencode/commands/review.md
   handoff: .opencode/commands/handoff.md
   test: .opencode/commands/test.md

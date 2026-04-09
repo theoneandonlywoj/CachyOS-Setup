@@ -230,12 +230,12 @@ opencode-sync-to:
 		BACKUP_DIR="$(REPO_DIR)/.opencode_backup_$(TIMESTAMP)"; \
 		mv "$(REPO_DIR)/.opencode" "$$BACKUP_DIR"; \
 		echo "✅ Backup created at $$BACKUP_DIR"; \
-		echo "🗑  Removing existing .opencode folder..."; \
-		rm -rf "$(REPO_DIR)/.opencode"; \
 	fi
+	@echo "🗑  Removing existing .opencode folder..."
+	@rm -rf "$(REPO_DIR)/.opencode"
 	@echo "📦 Syncing .opencode config to $(REPO_DIR)/.opencode..."
-	@mkdir -p "$(REPO_DIR)/.opencode"
-	@cp -r "$(OPENCODE_REPO_DIR)"/* "$(REPO_DIR)/.opencode/"
+	@mkdir -p "$(REPO_DIR)"
+	@cp -r "$(OPENCODE_REPO_DIR)" "$(REPO_DIR)/.opencode"
 	@echo "✅ .opencode config synced to $(REPO_DIR)/.opencode"
 
 # ============================================================

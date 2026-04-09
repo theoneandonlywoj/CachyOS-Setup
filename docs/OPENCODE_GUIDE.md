@@ -461,7 +461,7 @@ Config files **merge** together -- later entries override earlier ones.
   "enabled_providers": ["anthropic", "openai"],
 
   // === Agents ===
-  "default_agent": "build",
+  "default_agent": "plan",
 
   // === MCP Servers ===
   "mcp": {
@@ -817,6 +817,27 @@ You are a senior code reviewer. Focus on:
 
 The filename becomes the agent ID.
 
+### Domain-Specific Agents
+
+Beyond built-in agents, this setup includes specialized agents for specific frameworks:
+
+#### Phoenix -- Elixir/Phoenix Fullstack Development
+
+- **Edit permissions:** All `.ex`, `.exs`, `.heex`, `.eex`, `config/*.exs`, `*.fish` files; `priv/*` requires asking
+- **Bash:** `mix`, `iex`, `Phoenix`, `make`, `chmod` allowed; `sudo` requires asking
+- **Glob:** `.ex`, `.exs`, `.heex`, `*.fish` files
+- **MCP:** Connects to Tidewave for runtime evaluation, SQL queries, and log access
+- **Commands:** `gen-context`, `gen-migration`, `gen-schema`, `gen-test`, `liveview`, `tidewave`, `tidewave-status`, `dialyzer-debug`, `credo-debug`, `permissions-update`, `review`, `handoff`, `test`
+- **When to use:** Building Phoenix web apps, LiveViews, APIs, or working with Ecto
+
+#### Nerves -- Embedded Firmware Development
+
+- **Edit permissions:** All `.ex`, `.exs`, `config/*.exs`, `rel/**/*`, `nerves/**/*`, `*.fish` files
+- **Bash:** `mix`, `nerves.*`, `mix firmware`, `mix burn`, `fwup`, `lsusb`, `make`, `chmod` allowed; `sudo` requires asking
+- **Glob:** `.ex`, `.exs` files
+- **Commands:** `dialyzer-debug`, `credo-debug`, `permissions-update`, `review`, `handoff`, `test`
+- **When to use:** IoT development, cross-compiling, burning firmware images
+
 ---
 
 ## 11. Oh My OpenCode Agents
@@ -1068,6 +1089,12 @@ Oh My OpenCode bundles three MCP servers:
 | **context7** | `https://mcp.context7.com/mcp` | Library/framework documentation lookup |
 | **grep_app** | `https://mcp.grep.app` | GitHub code search across all public repos |
 
+### Phoenix Development MCP
+
+| MCP | URL | Purpose |
+|-----|-----|---------|
+| **tidewave** | `http://127.0.0.1:4000/tidewave/mcp` | Phoenix runtime evaluation, SQL queries, and log access (local dev only) |
+
 ### Notable Community MCP Servers
 
 | Server | Purpose |
@@ -1290,6 +1317,20 @@ description: Database migration and query optimization specialist
 | **playwright** | Browser automation -- testing, screenshots, web scraping |
 | **git-master** | Atomic commits, rebase surgery, history analysis with automatic style detection |
 | **frontend-ui-ux** | Design-first UI development with emphasis on aesthetics, typography, color palettes |
+
+### Phoenix/Elixir Skills
+
+This setup includes specialized skills for Elixir and Phoenix development:
+
+| Skill | Purpose |
+|-------|---------|
+| **gen-context** | Generate Phoenix contexts for business logic and data access using `mix phx.gen.context` |
+| **gen-migration** | Generate Ecto database migrations for schema changes |
+| **gen-schema** | Generate Ecto schemas for data models using `mix phx.gen.schema` |
+| **gen-test** | Generate and write ExUnit tests for Elixir modules, Phoenix contexts, and LiveViews |
+| **liveview** | Build interactive real-time features with Phoenix LiveView -- streams, forms, JS hooks |
+| **tidewave** | Interact with a running Phoenix app via Tidewave MCP for runtime evaluation, SQL queries, and log access |
+| **pr** | Generate pull request descriptions from git diff and commit history against a target branch |
 
 ### Skill Permissions
 

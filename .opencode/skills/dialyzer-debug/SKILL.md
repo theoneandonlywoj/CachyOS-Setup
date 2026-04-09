@@ -1,3 +1,8 @@
+---
+name: dialyzer-debug
+description: Debug and resolve Dialyzer warnings in Elixir projects. Use when mix dialyzer produces warnings or type errors.
+---
+
 # dialyzer-debug — Debugging Dialyzer Warnings
 
 Use this skill when Dialyzer produces warnings or errors that need to be investigated and resolved.

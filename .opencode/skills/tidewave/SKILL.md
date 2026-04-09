@@ -1,3 +1,8 @@
+---
+name: tidewave
+description: Interact with a running Phoenix app via Tidewave MCP for runtime evaluation, SQL queries, and log access. Use in local development only.
+---
+
 # Phoenix Runtime Skill
 
 Specialized knowledge for working with a running Phoenix application via

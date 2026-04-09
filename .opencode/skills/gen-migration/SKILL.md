@@ -1,4 +1,9 @@
-# gen_migration — Generate Ecto Migrations
+---
+name: gen-migration
+description: Generate Ecto database migrations for schema changes. Use when adding tables, columns, indexes, or constraints.
+---
+
+# gen-migration — Generate Ecto Migrations
 
 Use this skill when you need to create database migrations for schema changes, adding columns, creating tables, or modifying indexes.
 

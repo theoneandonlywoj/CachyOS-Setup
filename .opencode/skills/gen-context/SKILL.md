@@ -1,4 +1,9 @@
-# gen_context — Generate Phoenix Contexts
+---
+name: gen-context
+description: Generate Phoenix contexts for business logic and data access. Use when creating or extending context modules with mix phx.gen.context.
+---
+
+# gen-context — Generate Phoenix Contexts
 
 Use this skill when you need to create a new Phoenix context (a module that encapsulates business logic and data access), or add functionality to an existing context.
 

@@ -1,3 +1,8 @@
+---
+name: credo-debug
+description: Debug and resolve Credo violations in Elixir projects. Use when mix credo reports issues that need investigation.
+---
+
 # credo-debug — Debugging Credo Violations
 
 Use this skill when Credo reports issues in your code that need to be understood and resolved.

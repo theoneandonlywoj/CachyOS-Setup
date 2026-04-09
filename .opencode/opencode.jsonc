@@ -10,17 +10,11 @@
       "priv/static/cache"
     ]
   },
-  "agents": {
-    "phoenix": ".opencode/agents/phoenix.md",
-    "nerves": ".opencode/agents/nerves.md"
-  },
   "autoupdate": "notify",
   "snapshot": true,
   "compaction": {
     "enabled": true,
     "strategy": "auto"
   },
-  "share": {
-    "enabled": false
-  }
+  "share": "disabled"
 }

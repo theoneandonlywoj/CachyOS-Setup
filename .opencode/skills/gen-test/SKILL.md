@@ -1,4 +1,9 @@
-# gen_test — Generate and Write Tests
+---
+name: gen-test
+description: Generate and write ExUnit tests for Elixir modules, Phoenix contexts, and LiveViews. Use when creating test files.
+---
+
+# gen-test — Generate and Write Tests
 
 Use this skill when writing tests for Elixir modules, Phoenix contexts, LiveViews, or any test file following ExUnit conventions.
 

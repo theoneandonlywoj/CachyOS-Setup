@@ -1,4 +1,9 @@
-# gen_schema — Generate Ecto Schemas
+---
+name: gen-schema
+description: Generate Ecto schemas for data models. Use when creating new schemas or adding fields with mix phx.gen.schema.
+---
+
+# gen-schema — Generate Ecto Schemas
 
 Use this skill when you need to create a new Ecto schema for a data model, or add fields to an existing schema.
 

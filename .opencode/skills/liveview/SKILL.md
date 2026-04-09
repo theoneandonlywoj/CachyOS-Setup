@@ -1,3 +1,8 @@
+---
+name: liveview
+description: Build interactive real-time features with Phoenix LiveView. Use when creating LiveViews, working with streams, forms, or JS hooks.
+---
+
 # liveview — Phoenix LiveView Development
 
 Use this skill when building interactive, real-time features with Phoenix LiveView.

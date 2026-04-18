@@ -35,11 +35,15 @@
       "coverage",
       "*.tmp",
       ".elixir_ls",
+      ".elixir_ls/**/*",
       "priv/static/cache",
       "assets/node_modules",
       "erl_crash.dump",
       ".opencode/node_modules",
-      ".opencode/sessions"
+      ".opencode/sessions",
+      "node_modules",
+      ".env",
+      ".env.*"
     ]
   },
   "autoupdate": "notify",

@@ -63,9 +63,9 @@ command:
   dialyzer-debug: .opencode/skills/dialyzer-debug/SKILL.md
   credo-debug: .opencode/skills/credo-debug/SKILL.md
   permissions-update: .opencode/commands/permissions-update.md
-  review: .opencode/commands/review.md
-  handoff: .opencode/commands/handoff.md
-  test: .opencode/commands/phoenix-test.md
+  review: .opencode/skills/review/SKILL.md
+  handoff: .opencode/skills/handoff/SKILL.md
+  test: .opencode/skills/test/SKILL.md
   precommit: .opencode/commands/phoenix-precommit.md
   openapi: .opencode/commands/openapi.md
   changelog: .opencode/commands/changelog.md

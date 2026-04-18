@@ -6,7 +6,7 @@
         cursor-sync cursor-backup cursor-restore cursor-diff \
         doom-sync doom-backup doom-restore \
         tmux-sync tmux-backup tmux-restore tmux-diff \
-        opencode-sync opencode-backup opencode-restore opencode-diff
+        opencode-sync opencode-backup opencode-restore opencode-diff opencode-mcp-check
 
 # Generate timestamp in format YYYY_mm_dd_hh_MM
 TIMESTAMP := $(shell date +"%Y_%m_%d_%H_%M")
@@ -238,6 +238,30 @@ opencode-sync-to:
 	@cp -r "$(OPENCODE_REPO_DIR)" "$(REPO_DIR)/.opencode"
 	@echo "✅ .opencode config synced to $(REPO_DIR)/.opencode"
 
+opencode-mcp-check:
+	@echo "🧪 Checking OpenCode MCP servers..."
+	@cd "$(OPENCODE_REPO_DIR)" && \
+	check_mcp() { \
+		name="$$1"; shift; \
+		echo "📋 $$name"; \
+		output=$$(timeout 5s "$$@" 2>&1); \
+		status=$$?; \
+		printf '%s\n' "$$output"; \
+		if [ $$status -eq 0 ] || [ $$status -eq 124 ]; then \
+			echo "✅ $$name responded"; \
+		else \
+			echo "❌ $$name failed to start"; \
+			exit $$status; \
+		fi; \
+		echo; \
+	}; \
+	check_mcp "Sequential Thinking" npx -y @modelcontextprotocol/server-sequential-thinking@2025.12.18; \
+	check_mcp "Filesystem" npx -y @modelcontextprotocol/server-filesystem@2026.1.14 .; \
+	check_mcp "Memory" npx -y @modelcontextprotocol/server-memory@2026.1.26; \
+	check_mcp "HexDocs" npx -y hexdocs-mcp@0.6.0; \
+	echo "ℹ️  Tidewave is not checked here; it requires a running Phoenix app."; \
+	echo "✅ All configured local MCP servers responded"
+
 # ============================================================
 # CONVENIENCE ALIASES
 # ============================================================
@@ -405,6 +429,7 @@ help:
 	@echo "  make opencode-restore  Restore most recent Opencode backup"
 	@echo "  make opencode-diff     Show differences between repo and installed"
 	@echo "  make opencode-sync-to  Sync .opencode config to a repo (REPO_DIR=required)"
+	@echo "  make opencode-mcp-check Check local OpenCode MCP servers"
 	@echo
 	@echo "TESTING:"
 	@echo "  make soft-test        Validate Fish scripts (syntax, structure)"

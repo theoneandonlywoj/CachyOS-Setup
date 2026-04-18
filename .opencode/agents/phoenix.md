@@ -23,6 +23,31 @@ permission:
     "**/*.fish": allow
 
 mcp:
+  sequential-thinking:
+    type: local
+    command:
+      - npx
+      - -y
+      - "@modelcontextprotocol/server-sequential-thinking@2025.12.18"
+  filesystem:
+    type: local
+    command:
+      - npx
+      - -y
+      - "@modelcontextprotocol/server-filesystem@2026.1.14"
+      - .
+  memory:
+    type: local
+    command:
+      - npx
+      - -y
+      - "@modelcontextprotocol/server-memory@2026.1.26"
+  hexdocs-mcp:
+    type: local
+    command:
+      - npx
+      - -y
+      - hexdocs-mcp@0.6.0
   tidewave:
     type: remote
     url: http://127.0.0.1:4000/tidewave/mcp
@@ -40,4 +65,7 @@ command:
   permissions-update: .opencode/commands/permissions-update.md
   review: .opencode/commands/review.md
   handoff: .opencode/commands/handoff.md
-  test: .opencode/commands/test.md
+  test: .opencode/commands/phoenix-test.md
+  precommit: .opencode/commands/phoenix-precommit.md
+  openapi: .opencode/commands/openapi.md
+  changelog: .opencode/commands/changelog.md

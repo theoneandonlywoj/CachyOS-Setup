@@ -22,7 +22,26 @@ permission:
     "**/*.ex": allow
     "**/*.exs": allow
 
-mcp: {}
+mcp:
+  sequential-thinking:
+    type: local
+    command:
+      - npx
+      - -y
+      - "@modelcontextprotocol/server-sequential-thinking@2025.12.18"
+  filesystem:
+    type: local
+    command:
+      - npx
+      - -y
+      - "@modelcontextprotocol/server-filesystem@2026.1.14"
+      - .
+  memory:
+    type: local
+    command:
+      - npx
+      - -y
+      - "@modelcontextprotocol/server-memory@2026.1.26"
 
 command:
   dialyzer-debug: .opencode/skills/dialyzer-debug/SKILL.md

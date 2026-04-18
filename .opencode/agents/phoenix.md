@@ -23,25 +23,6 @@ permission:
     "**/*.fish": allow
 
 mcp:
-  sequential-thinking:
-    type: local
-    command:
-      - npx
-      - -y
-      - "@modelcontextprotocol/server-sequential-thinking@2025.12.18"
-  filesystem:
-    type: local
-    command:
-      - npx
-      - -y
-      - "@modelcontextprotocol/server-filesystem@2026.1.14"
-      - .
-  memory:
-    type: local
-    command:
-      - npx
-      - -y
-      - "@modelcontextprotocol/server-memory@2026.1.26"
   hexdocs-mcp:
     type: local
     command:
@@ -63,7 +44,7 @@ command:
   dialyzer-debug: .opencode/skills/dialyzer-debug/SKILL.md
   credo-debug: .opencode/skills/credo-debug/SKILL.md
   permissions-update: .opencode/commands/permissions-update.md
-  review: .opencode/skills/review/SKILL.md
+  review: .opencode/commands/review.md
   handoff: .opencode/skills/handoff/SKILL.md
   test: .opencode/skills/test/SKILL.md
   precommit: .opencode/commands/phoenix-precommit.md

@@ -43,14 +43,23 @@
       ".opencode/sessions",
       "node_modules",
       ".env",
-      ".env.*"
+      ".env.*",
+      ".DS_Store",
+      "*.swp",
+      "*~",
+      "__pycache__",
+      ".pytest_cache"
     ]
   },
   "autoupdate": "notify",
+  // Notify but don't auto-apply updates — lets users review changes before applying
   "snapshot": true,
+  // Enable session snapshots for recovery
   "compaction": {
     "enabled": true,
     "strategy": "auto"
+    // Automatically compact sessions to save disk space
   },
   "share": "disabled"
+  // Disable sharing to keep sessions local/private
 }

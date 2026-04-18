@@ -1,0 +1,28 @@
+{
+  // =============================================================================
+  // MCP Default Configuration Reference
+  // =============================================================================
+  // This file documents the baseline MCP server configuration used by agents.
+  // Agents may extend or override these defaults in their own configuration.
+  //
+  // Usage:
+  //   - Nerves agent inherits all servers from this baseline
+  //   - Phoenix agent extends with hexdocs-mcp and tidewave additional servers
+  //
+  // Version pinning: @2025.12.18, @2026.1.14, @2026.1.26
+  // =============================================================================
+
+  "$schema": "https://opencode.ai/config.json",
+  "sequential-thinking": {
+    "type": "local",
+    "command": ["npx", "-y", "@modelcontextprotocol/server-sequential-thinking@2025.12.18"]
+  },
+  "filesystem": {
+    "type": "local",
+    "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem@2026.1.14", "."]
+  },
+  "memory": {
+    "type": "local",
+    "command": ["npx", "-y", "@modelcontextprotocol/server-memory@2026.1.26"]
+  }
+}

@@ -26,6 +26,14 @@
         "-y",
         "@modelcontextprotocol/server-memory@2026.1.26"
       ]
+    },
+    "fetch": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-fetch@2026.01.09"
+      ]
     }
   },
   "watcher": {

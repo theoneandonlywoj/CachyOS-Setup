@@ -19,6 +19,7 @@ across sessions, extracts command and file patterns, and merges them into
 
 ```
 /permissions-update
+/update-permissions
 ```
 
 Or ask: "update my opencode permissions from session history"
@@ -27,8 +28,8 @@ Or ask: "update my opencode permissions from session history"
 
 1. Reads all completed tool calls from `~/.local/share/opencode/opencode.db`
 2. Extracts patterns:
-   - **bash**: command prefixes (e.g. `mix *`, `git *`)
-   - **edit**: file extension globs (e.g. `**/*.ex`, `**/*.heex`)
+   - **bash**: command prefixes (e.g. `mix *`, `git *`, `npx *`)
+   - **edit**: file extension globs (e.g. `**/*.ex`, `**/*.jsonc`)
    - **read**: file extension globs
    - **glob**: directory-based globs
 3. Shows a diff of what will be added
@@ -46,6 +47,6 @@ Or ask: "update my opencode permissions from session history"
 
 - **Skill**: `.opencode/skills/permissions-update/SKILL.md`
 - **Script**: `.opencode/skills/permissions-update/update_permissions.py`
-- **Command**: `.opencode/commands/permissions-update.md`
+- **Commands**: `.opencode/commands/permissions-update.md`, `.opencode/commands/update-permissions.md`
 - **Global config**: `~/.config/opencode/opencode.json`
 - **Session DB**: `~/.local/share/opencode/opencode.db`

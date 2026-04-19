@@ -186,6 +186,7 @@ opencode-sync: opencode-backup
 	@echo "📦 Copying Opencode configuration for Elixir/Phoenix..."
 	@mkdir -p "$(OPENCODE_CONFIG_DIR)"
 	@cp "$(OPENCODE_REPO_DIR)/opencode.jsonc" "$(OPENCODE_CONFIG_DIR)/opencode.jsonc"
+	@cp "$(OPENCODE_REPO_DIR)/mcp-defaults.jsonc" "$(OPENCODE_CONFIG_DIR)/mcp-defaults.jsonc"
 	@echo "✅ Opencode config synced to $(OPENCODE_CONFIG_DIR)"
 	@echo "💡 Restart Opencode to apply changes"
 
@@ -195,6 +196,9 @@ opencode-backup:
 		mkdir -p "$(OPENCODE_BACKUP_DIR)"; \
 		if [ -f "$(OPENCODE_CONFIG_DIR)/opencode.jsonc" ]; then \
 			cp "$(OPENCODE_CONFIG_DIR)/opencode.jsonc" "$(OPENCODE_BACKUP_DIR)/opencode.jsonc"; \
+		fi; \
+		if [ -f "$(OPENCODE_CONFIG_DIR)/mcp-defaults.jsonc" ]; then \
+			cp "$(OPENCODE_CONFIG_DIR)/mcp-defaults.jsonc" "$(OPENCODE_BACKUP_DIR)/mcp-defaults.jsonc"; \
 		fi; \
 		echo "✅ Backup created at $(OPENCODE_BACKUP_DIR)"; \
 	else \
@@ -218,7 +222,8 @@ opencode-restore:
 
 opencode-diff:
 	@echo "📊 Comparing Opencode configurations..."
-	@diff -u "$(OPENCODE_CONFIG_DIR)/opencode.jsonc" "$(OPENCODE_REPO_DIR)/opencode.jsonc" 2>/dev/null || echo "(files differ or missing)"
+	@diff -u "$(OPENCODE_CONFIG_DIR)/opencode.jsonc" "$(OPENCODE_REPO_DIR)/opencode.jsonc" 2>/dev/null || echo "(opencode.jsonc: files differ or missing)"; \
+	@diff -u "$(OPENCODE_CONFIG_DIR)/mcp-defaults.jsonc" "$(OPENCODE_REPO_DIR)/mcp-defaults.jsonc" 2>/dev/null || echo "(mcp-defaults.jsonc: files differ or missing)"
 
 opencode-sync-to:
 	@if [ -z "$(REPO_DIR)" ]; then \

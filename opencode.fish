@@ -40,11 +40,11 @@ if test $status -ne 0
 end
 echo "✅ OpenCode CLI installed."
 
-# === 4. Ensure ~/.local/bin is in PATH for this session ===
-set -q PATH; or set PATH ""
-if not string match -q "*$HOME/.local/bin*" $PATH
-    set -gx PATH "$HOME/.local/bin" $PATH
-    echo "💡 Added ~/.local/bin to PATH for this session."
+# === 4. Reload terminal config to pick up PATH changes ===
+echo "🔄 Reloading terminal configuration..."
+source ~/.config/fish/config.fish
+if test $status -ne 0
+    echo "⚠ Failed to reload config. Please restart your terminal."
 end
 
 # === 5. Verify installation ===

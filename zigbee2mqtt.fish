@@ -178,8 +178,10 @@ echo "🎉 Zigbee2MQTT setup complete!"
 echo
 echo "📚 Post-installation steps:"
 echo
-echo "   💡 Before starting, verify the Zigbee gateway is online:"
-echo "      nc -zv $GATEWAY_IP $GATEWAY_PORT"
+echo "   💡 Verify connectivity before starting:"
+echo "      Gateway →  nc -zv $GATEWAY_IP $GATEWAY_PORT"
+echo "      Subscribe →  mosquitto_sub -h $MQTT_HOST -t zigbee2mqtt/# -v"
+echo "      Publish →  mosquitto_pub -h $MQTT_HOST -t zigbee2mqtt/test -m 'hello'"
 echo
 echo "   1. Log out and back in for serial port (dialout) permissions to apply."
 echo "   2. Edit your coordinator port if needed:"

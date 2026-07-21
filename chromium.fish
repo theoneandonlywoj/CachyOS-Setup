@@ -24,7 +24,15 @@ if test -n "$chromium_installed"
     echo "✅ Chromium removed."
 end
 
-# === 2. Install Chromium ===
+# === 2. Refresh package database ===
+echo "🔄 Refreshing package database..."
+sudo pacman -Sy --noconfirm
+if test $status -ne 0
+    echo "❌ Failed to refresh package database."
+    exit 1
+end
+
+# === 3. Install Chromium ===
 echo "📦 Installing Chromium..."
 sudo pacman -S --needed --noconfirm chromium
 if test $status -ne 0
@@ -33,7 +41,7 @@ if test $status -ne 0
 end
 echo "✅ Chromium installed."
 
-# === 3. Install optional Chromium extensions ===
+# === 4. Install optional Chromium extensions ===
 echo "📦 Installing optional Chromium extensions..."
 echo "💡 Install Chromium web store extension support for accessing Chrome extensions"
 read -P "Do you want to install Chromium web store extension support? [y/N] " install_webstore
@@ -48,7 +56,7 @@ if test "$install_webstore" = "y" -o "$install_webstore" = "Y"
     end
 end
 
-# === 4. Check and fix snapper Boost library issue (if present) ===
+# === 5. Check and fix snapper Boost library issue (if present) ===
 if test -f /usr/bin/snapper
     echo
     echo "🔧 Checking for snapper Boost library issue..."
@@ -72,8 +80,9 @@ if test -f /usr/bin/snapper
     end
 end
 
-# === 5. Verify installation ===
+# === 6. Verify installation ===
 echo
+
 echo "🧪 Verifying installation..."
 command -q chromium
 if test $status -eq 0

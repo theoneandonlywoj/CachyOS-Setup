@@ -1,4 +1,4 @@
-# === Makefile for Doom Emacs, Cursor & Tmux config sync ===
+# === Makefile for Doom Emacs, Cursor, Tmux & opencode config sync ===
 # Moves existing configs to timestamped backups and installs new configs
 # Supports restore from the most recent backup
 
@@ -6,7 +6,8 @@
         cursor-sync cursor-backup cursor-restore cursor-diff \
         doom-sync doom-backup doom-restore \
         tmux-sync tmux-backup tmux-restore tmux-diff \
-        openclaw-sync openclaw-backup openclaw-restore
+        openclaw-sync openclaw-backup openclaw-restore \
+        opencode-backup opencode-sync opencode-restore opencode-diff
 
 # Generate timestamp in format YYYY_mm_dd_hh_MM
 TIMESTAMP := $(shell date +"%Y_%m_%d_%H_%M")
@@ -29,11 +30,16 @@ OPENCLAW_DIR := $(HOME)/.openclaw
 OPENCLAW_REPO_DIR := ./.openclaw
 OPENCLAW_BACKUP_DIR := $(HOME)/.openclaw_backup_$(TIMESTAMP)
 
+# opencode paths
+OPENCODE_DIR := $(HOME)/.config/opencode
+OPENCODE_REPO_DIR := ./.opencode
+OPENCODE_BACKUP_DIR := $(HOME)/.config/opencode_backup_$(TIMESTAMP)
+
 # ============================================================
 # DEFAULT TARGET
 # ============================================================
 
-all: doom-sync cursor-sync
+all: doom-sync cursor-sync opencode-sync
 	@echo "✅ All configurations synced!"
 
 # ============================================================
@@ -257,15 +263,63 @@ openclaw-restore:
 	echo "✅ OpenClaw restore complete from $$latest_backup"
 
 # ============================================================
+# OPENCODE CONFIGURATION
+# ============================================================
+
+opencode-backup:
+	@if [ -d "$(OPENCODE_DIR)" ]; then \
+		echo "💾 Backing up existing $(OPENCODE_DIR) to $(OPENCODE_BACKUP_DIR)..."; \
+		mv "$(OPENCODE_DIR)" "$(OPENCODE_BACKUP_DIR)"; \
+		echo "✅ Backup created at $(OPENCODE_BACKUP_DIR)"; \
+	else \
+		echo "ℹ️ No existing $(OPENCODE_DIR) found — skipping backup."; \
+	fi
+
+opencode-sync: opencode-backup
+	@echo "📦 Copying opencode configuration..."
+	@cp -r "$(OPENCODE_REPO_DIR)" "$(OPENCODE_DIR)"
+	@echo "✅ opencode configuration synced to $(OPENCODE_DIR)"
+	@echo "💡 Restart opencode to apply changes"
+
+opencode-restore:
+	@echo "♻️  Restoring the most recent opencode backup..."
+	@latest_backup=$$(ls -d $(HOME)/.config/opencode_backup_* 2>/dev/null | sort -r | head -n 1); \
+	if [ -z "$$latest_backup" ]; then \
+		echo "❌ No opencode backups found. Cannot restore."; \
+		exit 1; \
+	fi; \
+	if [ -d "$(OPENCODE_DIR)" ]; then \
+		echo "🗑  Removing current $(OPENCODE_DIR) before restore..."; \
+		rm -rf "$(OPENCODE_DIR)"; \
+	fi; \
+	echo "♻️  Restoring from $$latest_backup..."; \
+	mv "$$latest_backup" "$(OPENCODE_DIR)"; \
+	echo "✅ opencode restore complete from $$latest_backup"
+
+opencode-diff:
+	@echo "📊 Comparing opencode configurations..."
+	@echo "=== opencode.json ==="
+	@diff -u "$(OPENCODE_DIR)/opencode.json" "$(OPENCODE_REPO_DIR)/opencode.json" 2>/dev/null || echo "(files differ or missing)"
+	@echo
+	@echo "=== Differing files summary ==="
+	@diff -rq \
+		--exclude=node_modules \
+		--exclude=package.json \
+		--exclude=package-lock.json \
+		--exclude=bun.lock \
+		--exclude=.gitignore \
+		"$(OPENCODE_DIR)" "$(OPENCODE_REPO_DIR)" 2>/dev/null || echo "(directories differ or missing)"
+
+# ============================================================
 # CONVENIENCE ALIASES
 # ============================================================
 
-sync: doom-sync cursor-sync tmux-sync openclaw-sync
+sync: doom-sync cursor-sync tmux-sync openclaw-sync opencode-sync
 	@echo "✅ All configurations synced!"
 
-backup: doom-backup cursor-backup tmux-backup openclaw-backup
+backup: doom-backup cursor-backup tmux-backup openclaw-backup opencode-backup
 
-restore: doom-restore cursor-restore tmux-restore openclaw-restore
+restore: doom-restore cursor-restore tmux-restore openclaw-restore opencode-restore
 
 # ============================================================
 # TESTING
@@ -398,7 +452,7 @@ help:
 	@echo "=================================="
 	@echo
 	@echo "ALL:"
-	@echo "  make all              Sync Doom Emacs and Cursor configs"
+	@echo "  make all              Sync Doom Emacs, Cursor, and opencode configs"
 	@echo
 	@echo "CURSOR IDE:"
 	@echo "  make cursor-sync      Backup and sync Cursor settings/keybindings"
@@ -422,11 +476,17 @@ help:
 	@echo "  make openclaw-sync    Deploy repo config to ~/.openclaw/ (with backup)"
 	@echo "  make openclaw-restore Restore most recent OpenClaw backup"
 	@echo
+	@echo "OPENCODE:"
+	@echo "  make opencode-backup  Backup current ~/.config/opencode"
+	@echo "  make opencode-sync    Deploy repo .opencode/ to ~/.config/opencode (with backup)"
+	@echo "  make opencode-restore Restore most recent opencode backup"
+	@echo "  make opencode-diff    Show differences between repo and installed"
+	@echo
 	@echo "TESTING:"
 	@echo "  make soft-test        Validate Fish scripts (syntax, structure)"
 	@echo
 	@echo "SHORTCUTS:"
-	@echo "  make sync             Sync all configs (Doom, Cursor, Tmux)"
+	@echo "  make sync             Sync all configs (Doom, Cursor, Tmux, OpenClaw, opencode)"
 	@echo "  make backup           Backup all configs"
 	@echo "  make restore          Restore all from most recent backups"
 	@echo

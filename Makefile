@@ -7,7 +7,9 @@
         doom-sync doom-backup doom-restore \
         tmux-sync tmux-backup tmux-restore tmux-diff \
         openclaw-sync openclaw-backup openclaw-restore \
-        opencode-backup opencode-sync opencode-restore opencode-diff
+        opencode-backup opencode-sync opencode-restore opencode-diff \
+        herdr-sync herdr-backup herdr-restore herdr-diff \
+        hsync hbackup hrestore hdiff
 
 # Generate timestamp in format YYYY_mm_dd_hh_MM
 TIMESTAMP := $(shell date +"%Y_%m_%d_%H_%M")
@@ -35,11 +37,18 @@ OPENCODE_DIR := $(HOME)/.config/opencode
 OPENCODE_REPO_DIR := ./.opencode
 OPENCODE_BACKUP_DIR := $(HOME)/.config/opencode_backup_$(TIMESTAMP)
 
+# Herdr paths
+HERDR_REPO_DIR := ./.config/herdr
+HERDR_HOME_DIR := $(HOME)/.config/herdr
+HERDR_REPO_CONFIG := $(HERDR_REPO_DIR)/config.toml
+HERDR_HOME_CONFIG := $(HERDR_HOME_DIR)/config.toml
+HERDR_BACKUP_FILE := $(HERDR_HOME_DIR)/config.toml.backup_$(TIMESTAMP)
+
 # ============================================================
 # DEFAULT TARGET
 # ============================================================
 
-all: doom-sync cursor-sync opencode-sync
+all: doom-sync cursor-sync opencode-sync herdr-sync
 	@echo "✅ All configurations synced!"
 
 # ============================================================
@@ -311,15 +320,79 @@ opencode-diff:
 		"$(OPENCODE_DIR)" "$(OPENCODE_REPO_DIR)" 2>/dev/null || echo "(directories differ or missing)"
 
 # ============================================================
+# HERDR CONFIGURATION
+# ============================================================
+
+herdr-sync: herdr-backup
+	@echo "📦 Copying Herdr configuration and Fish helper scripts..."
+	@mkdir -p "$(HERDR_HOME_DIR)"
+	@cp "$(HERDR_REPO_CONFIG)" "$(HERDR_HOME_CONFIG)"
+	@if [ -d "$(HERDR_REPO_DIR)/scripts" ]; then \
+		mkdir -p "$(HERDR_HOME_DIR)/scripts"; \
+		cp "$(HERDR_REPO_DIR)"/scripts/* "$(HERDR_HOME_DIR)/scripts/"; \
+		chmod +x "$(HERDR_HOME_DIR)"/scripts/*; \
+	fi
+	@if command -v herdr >/dev/null 2>&1; then \
+		echo "🔄 Reloading Herdr config..."; \
+		herdr server reload-config >/dev/null 2>&1 || true; \
+	fi
+	@echo "✅ Herdr configuration synced to $(HERDR_HOME_DIR)"
+
+herdr-backup:
+	@if [ -f "$(HERDR_HOME_CONFIG)" ]; then \
+		echo "💾 Backing up existing $(HERDR_HOME_CONFIG) to $(HERDR_BACKUP_FILE)..."; \
+		cp "$(HERDR_HOME_CONFIG)" "$(HERDR_BACKUP_FILE)"; \
+		echo "✅ Backup created at $(HERDR_BACKUP_FILE)"; \
+	else \
+		echo "ℹ️  No existing $(HERDR_HOME_CONFIG) found — skipping backup."; \
+	fi
+
+herdr-restore:
+	@echo "♻️  Restoring the most recent Herdr backup..."
+	@latest_backup=$$(ls -t "$(HERDR_HOME_DIR)"/config.toml.backup_* 2>/dev/null | head -n 1); \
+	if [ -z "$$latest_backup" ]; then \
+		echo "❌ No Herdr backups found. Cannot restore."; \
+		exit 1; \
+	fi; \
+	mkdir -p "$(HERDR_HOME_DIR)"; \
+	echo "♻️  Restoring from $$latest_backup..."; \
+	cp "$$latest_backup" "$(HERDR_HOME_CONFIG)"; \
+	echo "✅ Herdr restore complete from $$latest_backup"; \
+	if command -v herdr >/dev/null 2>&1; then \
+		echo "🔄 Reloading Herdr config..."; \
+		herdr server reload-config >/dev/null 2>&1 || true; \
+	fi
+
+herdr-diff:
+	@echo "📊 Comparing Herdr configurations..."
+	@echo "=== config.toml ==="
+	@diff -u "$(HERDR_HOME_CONFIG)" "$(HERDR_REPO_CONFIG)" 2>/dev/null || echo "(files differ or missing)"
+	@echo
+	@echo "=== helper scripts ==="
+	@if [ -d "$(HERDR_HOME_DIR)/scripts" ] && [ -d "$(HERDR_REPO_DIR)/scripts" ]; then \
+		diff -ru "$(HERDR_HOME_DIR)/scripts" "$(HERDR_REPO_DIR)/scripts" 2>/dev/null || true; \
+	else \
+		echo "(script directories differ or missing)"; \
+	fi
+
+# ============================================================
 # CONVENIENCE ALIASES
 # ============================================================
 
-sync: doom-sync cursor-sync tmux-sync openclaw-sync opencode-sync
+sync: doom-sync cursor-sync tmux-sync openclaw-sync opencode-sync herdr-sync
 	@echo "✅ All configurations synced!"
 
-backup: doom-backup cursor-backup tmux-backup openclaw-backup opencode-backup
+backup: doom-backup cursor-backup tmux-backup openclaw-backup opencode-backup herdr-backup
 
-restore: doom-restore cursor-restore tmux-restore openclaw-restore opencode-restore
+restore: doom-restore cursor-restore tmux-restore openclaw-restore opencode-restore herdr-restore
+
+hsync: herdr-sync
+
+hbackup: herdr-backup
+
+hrestore: herdr-restore
+
+hdiff: herdr-diff
 
 # ============================================================
 # TESTING
@@ -481,6 +554,16 @@ help:
 	@echo "  make opencode-sync    Deploy repo .opencode/ to ~/.config/opencode (with backup)"
 	@echo "  make opencode-restore Restore most recent opencode backup"
 	@echo "  make opencode-diff    Show differences between repo and installed"
+	@echo
+	@echo "HERDR:"
+	@echo "  make herdr-backup     Backup current ~/.config/herdr/config.toml"
+	@echo "  make herdr-sync       Deploy Herdr config and Fish helpers (with backup)"
+	@echo "  make herdr-restore    Restore most recent Herdr config backup"
+	@echo "  make herdr-diff       Show differences between repo and installed Herdr config"
+	@echo "  make hsync            Alias for herdr-sync"
+	@echo "  make hbackup          Alias for herdr-backup"
+	@echo "  make hrestore         Alias for herdr-restore"
+	@echo "  make hdiff            Alias for herdr-diff"
 	@echo
 	@echo "TESTING:"
 	@echo "  make soft-test        Validate Fish scripts (syntax, structure)"

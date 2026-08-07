@@ -1,0 +1,39 @@
+[keys]
+# Prefix-only additions avoid intercepting agent TUI shortcuts in panes.
+previous_workspace = "prefix+left"
+next_workspace = "prefix+right"
+switch_workspace = ""
+close_workspace = "prefix+ctrl+x"
+last_pane = "prefix+backtick"
+previous_agent = "prefix+shift+up"
+next_agent = "prefix+shift+down"
+focus_agent = "prefix+ctrl+1..9"
+open_worktree = "prefix+ctrl+o"
+remove_worktree = "prefix+ctrl+d"
+# Jump to the agent or pane that raised the most recent notification.
+open_notification_target = "prefix+o"
+
+[ui]
+agent_panel_sort = "spaces"
+show_agent_labels_on_pane_borders = true
+
+[ui.sidebar.agents]
+rows = [["state_icon", "state_text", "workspace", "tab"], ["terminal_title_stripped"], ["agent"]]
+
+[ui.sidebar.spaces]
+rows = [["state_icon", "workspace"], ["branch", "git_status"]]
+
+[ui.toast]
+delivery = "system"
+
+[[keys.command]]
+key = "prefix+ctrl+w"
+type = "shell"
+command = "~/.config/herdr/scripts/new-workspace-3-tabs.fish"
+description = "create workspace with 3 command tabs"
+
+[[keys.command]]
+key = "prefix+ctrl+a"
+type = "shell"
+command = "~/.config/herdr/scripts/start-agent-hidden.fish"
+description = "start an agent in a background workspace"

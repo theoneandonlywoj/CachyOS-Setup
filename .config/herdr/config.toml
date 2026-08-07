@@ -2,7 +2,7 @@
 # Prefix-only additions avoid intercepting agent TUI shortcuts in panes.
 previous_workspace = "prefix+left"
 next_workspace = "prefix+right"
-switch_workspace = ""
+switch_workspace = "prefix+shift+1..9"
 close_workspace = "prefix+ctrl+x"
 last_pane = "prefix+backtick"
 previous_agent = "prefix+shift+up"

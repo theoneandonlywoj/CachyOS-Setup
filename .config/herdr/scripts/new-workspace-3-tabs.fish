@@ -32,6 +32,17 @@ else if set -q HERDR_ACTIVE_PANE_CWD
     set cwd "$HERDR_ACTIVE_PANE_CWD"
 end
 
+if not set -q HERDR_3TAB_CWD
+    read --line --command "$cwd" --prompt-str "Workspace directory: " cwd
+    if test $status -ne 0
+        exit 1
+    end
+end
+if not test -d "$cwd"
+    echo "Working directory does not exist: $cwd"
+    exit 1
+end
+
 set -l workspace_label (basename -- "$cwd")
 if set -q HERDR_3TAB_WORKSPACE_LABEL
     set workspace_label "$HERDR_3TAB_WORKSPACE_LABEL"

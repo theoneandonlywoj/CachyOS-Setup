@@ -28,9 +28,11 @@ delivery = "system"
 
 [[keys.command]]
 key = "prefix+ctrl+w"
-type = "shell"
+type = "popup"
 command = "~/.config/herdr/scripts/new-workspace-3-tabs.fish"
 description = "create workspace with 3 command tabs"
+width = "50%"
+height = "10%"
 
 [[keys.command]]
 key = "prefix+ctrl+a"

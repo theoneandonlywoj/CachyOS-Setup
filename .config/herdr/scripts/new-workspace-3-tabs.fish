@@ -71,13 +71,8 @@ if test -z "$branch"
     set branch none
 end
 
-set -l agent_cmd 'if command -v opencode >/dev/null 2>&1; then exec opencode; elif command -v claude >/dev/null 2>&1; then exec claude; else echo "No agent CLI found: install opencode or claude."; fi'
 set -l git_cmd 'if command -v lazygit >/dev/null 2>&1; then exec lazygit; else echo "lazygit not found. Install it with pacman or your AUR helper."; fi'
-set -l cmd1 "$agent_cmd"
 set -l cmd2 "$git_cmd"
-if set -q HERDR_3TAB_CMD1
-    set cmd1 "$HERDR_3TAB_CMD1"
-end
 if set -q HERDR_3TAB_CMD2
     set cmd2 "$HERDR_3TAB_CMD2"
 end
@@ -114,9 +109,28 @@ if set -q HERDR_3TAB_CMD3
     set cmd3 "$HERDR_3TAB_CMD3"
 end
 
-herdr pane run "$pane1_id" "$cmd1" >/dev/null
 herdr pane run "$pane2_id" "$cmd2" >/dev/null
 herdr pane run "$pane3_id" "$cmd3" >/dev/null
+
+if set -q HERDR_3TAB_CMD1
+    herdr pane run "$pane1_id" "$HERDR_3TAB_CMD1" >/dev/null
+else
+    # Start through Herdr so the integration owns the terminal and reports
+    # the agent state; the server resolves the installed CLI itself.
+    set -l agent_name "agent-$workspace_id"
+    set -l agent_output (herdr agent start "$agent_name" --kind opencode --pane "$pane1_id" --timeout 30000 2>&1)
+    set -l agent_status $status
+    if test $agent_status -ne 0
+        set agent_output (herdr agent start "$agent_name" --kind claude --pane "$pane1_id" --timeout 30000 2>&1)
+        set agent_status $status
+    end
+    if test $agent_status -ne 0
+        echo "Could not start an agent in the new workspace."
+        echo "$agent_output"
+        exit 1
+    end
+end
+
 herdr workspace focus "$workspace_id" >/dev/null
 
 echo "Created workspace $workspace_label with agent, git, and status tabs."

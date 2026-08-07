@@ -30,7 +30,7 @@ delivery = "system"
 key = "prefix+ctrl+w"
 type = "popup"
 command = "~/.config/herdr/scripts/new-workspace-3-tabs.fish"
-description = "create workspace with 3 command tabs"
+description = "create workspace with four tabs"
 width = "50%"
 height = "10%"
 

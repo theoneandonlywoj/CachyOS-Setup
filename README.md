@@ -169,7 +169,7 @@ chmod +x herdr.fish
 ```
 
 The installer preserves an existing `~/.config/herdr/config.toml`. The custom
-configuration adds `prefix+ctrl+w` for a three-tab workspace and
+configuration adds `prefix+ctrl+w` for a four-tab workspace and
 `prefix+ctrl+a` for starting an agent in a new background workspace without
 stealing focus from the current terminal.
 

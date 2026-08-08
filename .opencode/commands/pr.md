@@ -18,4 +18,4 @@ Using the PR template structure above, generate a complete PR description. Fill 
 5. **Area Affected** — Check the appropriate box(es) based on which directories were changed.
 6. **Knowledge Tags** — Suggest relevant comma-separated tags based on the content changed.
 
-Write the completed PR description to a file named `_PR_<feature>.md` in the repo root, where `<feature>` is the current branch's feature slug. The output must be in markdown format ready to paste into a GitHub PR body.
+Write the completed PR description to a file named `PR.md` in the repo root. The output must be in markdown format ready to paste into a GitHub PR body.

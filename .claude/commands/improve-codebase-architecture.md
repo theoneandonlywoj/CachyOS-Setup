@@ -7,7 +7,7 @@ Surface architectural friction and propose **deepening opportunities** — refac
 ## Process
 
 1. **Scope before scanning.** Read `git log --oneline` to find hot spots. If the user named a direction, use it.
-2. Read `_CONTEXT_<feature>.md` and relevant ADRs in `docs/adr/`.
+2. Read `CONTEXT.md` and relevant ADRs in `docs/adr/`.
 3. Use the `task` tool with `subagent_type=explore` to walk the codebase. Look for:
    - Shallow modules (interface nearly as complex as implementation)
    - Tight coupling across seams

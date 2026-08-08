@@ -76,13 +76,15 @@ Install in this order to satisfy dependencies and get the fastest path to a work
    - `cursor.fish`, `emacs.fish`, `doom_emacs.fish`
 5. Language Runtime & Version Manager
    - `mise.fish`, `elixir_and_erlang.fish`
-6. API & Communication Tools
+6. AI Agent & Terminal Tools
+   - `herdr.fish`, `opencode.fish`, `claude-code-cli.fish`
+7. API & Communication Tools
    - `postman.fish`, `slack.fish`, `webcord.fish`
-7. Networking & Monitoring
+8. Networking & Monitoring
    - `wireshark.fish`, `wrk.fish`
-8. Cloud & Infrastructure
+9. Cloud & Infrastructure
    - `cuda.fish`, `dbeaver.fish`, `kubectl.fish`, `ngrok.fish`
-9. AI & Media
+10. AI & Media
    - `ollama.fish`, `vlc.fish`, `pdf_support.fish`, `exiftool.fish`
 
 ## ⚡ Quick Start
@@ -109,6 +111,11 @@ Run category-by-category:
 # Language Runtime & Version Manager
 ./mise.fish
 ./elixir_and_erlang.fish
+
+# AI Agent & Terminal Tools
+./herdr.fish
+./opencode.fish
+./claude-code-cli.fish
 
 # API & Communication Tools
 ./postman.fish
@@ -138,6 +145,7 @@ Install all at once (ordered):
 chmod +x *.fish
 ./htop.fish && ./netcat.fish && ./podman.fish && ./chromium.fish && \
 ./cursor.fish && ./emacs.fish && ./doom_emacs.fish && ./mise.fish && \
+./herdr.fish && ./opencode.fish && ./claude-code-cli.fish && \
 ./elixir_and_erlang.fish && ./postman.fish && ./slack.fish && \
 ./webcord.fish && ./wireshark.fish && ./wrk.fish && ./cuda.fish && \
 ./dbeaver.fish && ./ollama.fish && ./ngrok.fish && ./vlc.fish && \
@@ -148,6 +156,27 @@ Run a single script explicitly with Fish (if needed):
 
 ```sh
 fish ./cursor.fish
+```
+
+### Herdr
+
+Install Herdr with the custom Fish configuration, workspace helpers, and
+detected agent integrations:
+
+```sh
+chmod +x herdr.fish
+./herdr.fish
+```
+
+The installer preserves an existing `~/.config/herdr/config.toml`. The custom
+configuration adds `prefix+ctrl+w` for a four-tab workspace and
+`prefix+ctrl+a` for starting an agent in a new background workspace without
+stealing focus from the current terminal.
+
+Start a hidden agent manually:
+
+```sh
+~/.config/herdr/scripts/start-agent-hidden.fish opencode reviewer ~/project
 ```
 
 ## ✅ Verification

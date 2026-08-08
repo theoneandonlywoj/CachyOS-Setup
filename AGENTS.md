@@ -12,7 +12,7 @@ Default canonical labels are used. See `docs/agents/triage-labels.md`.
 
 ## Domain docs
 
-Single-context layout with `CONTEXT.md` and `docs/adr/`. See `docs/agents/domain.md`.
+Feature-scoped glossaries use `_CONTEXT_<feature>.md`; legacy `CONTEXT.md` remains readable. See `docs/agents/domain.md` and `docs/agents/intermediate-artifacts.md`.
 
 ## User-invoked skills
 
@@ -20,7 +20,7 @@ These workflows run when explicitly selected by the user:
 
 - `/ask-woj` — route a situation to the best workflow
 - `/ask-matt` — upstream router for the full engineering and productivity set
-- `/grill-with-docs` — sharpen an idea while updating `CONTEXT.md` and ADRs
+- `/grill-with-docs` — sharpen an idea while updating `_CONTEXT_<feature>.md`, `_INTERVIEW_<feature>.md`, and ADRs
 - `/grill-me` — interview a plan without writing repository context
 - `/triage` — move incoming issues through the triage state machine
 - `/setup-matt-pocock-skills` — configure issue tracker and domain-doc conventions

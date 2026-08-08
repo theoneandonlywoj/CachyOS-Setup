@@ -1,19 +1,32 @@
 ---
 name: diagnosing-bugs
-description: Diagnosis loop for hard bugs and performance regressions. Use when the user says "diagnose"/"debug this", or reports something broken/throwing/failing/slow.
+description: Diagnosis loop for hard bugs, Phoenix or JavaScript browser failures, and performance regressions. Use when the user says "diagnose"/"debug this", reports something broken/throwing/failing/slow, or asks for Playwright browser verification.
 ---
 
 # Diagnosing Bugs
 
 A discipline for hard bugs. Skip phases only when explicitly justified.
 
-When exploring the codebase, read `CONTEXT.md` (if it exists) to get a clear mental model of the relevant modules, and check ADRs in the area you're touching.
+When exploring the codebase, read `_CONTEXT_<feature>.md` (or the legacy `CONTEXT.md` when no feature context exists) to get a clear mental model of the relevant modules, and check ADRs in the area you're touching.
 
 ## Redact
 
-This skill has you show commands, outputs and captured artifacts. **Redact every secret first** — write `<REDACTED>` in its place. Build loops against env vars, so the credential stays in the environment rather than in what you show. Captured artifacts carry auth headers: quote only the lines that carry the signal.
+This skill has you show commands, outputs and captured artifacts. Redact secrets, tokens, cookies, authorization headers, and uncertain sensitive values before showing them. For safe examples, preserve a useful prefix and suffix with `...`; never publish a complete uncertain value. Build loops against env vars, so credentials stay out of the captured output.
 
 If the redacted output is not enough to diagnose the bug, say so and ask the user.
+
+Keep repo-local replay payloads, temporary harnesses, and captured evidence under `_debug_<feature>/` so they remain visibly separate from durable project files. Use the OS temporary directory instead when the artifact should not remain in the repository.
+
+### Phoenix and JavaScript browser loop
+
+For a user-visible failure in Phoenix, IEx, Bun, JavaScript, or TypeScript:
+
+1. Use the `playwright-cli-testing` skill and the `playwright-cli` executable as the primary browser seam.
+2. Inspect the target repository's Makefile, docs, and scripts for server and tool setup before suggesting commands. Do not silently install or guess a server command.
+3. Capture the CLI command, input, URL/state, DOM snapshot, console/network signal, and applicable PNG screenshot for each state-changing step.
+4. Use Chromium by default, configured development/sandbox integrations, and interactive manual steps when automation cannot complete authentication or another required action.
+
+Use direct Playwright helpers only when the CLI cannot express the needed browser assertion. Do not claim browser coverage with direct function or API calls.
 
 ## Phase 1 — Build a feedback loop
 

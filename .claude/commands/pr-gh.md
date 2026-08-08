@@ -1,11 +1,11 @@
 ---
-description: Create or update a GitHub PR from the PR template without writing PR.md
+description: Create or update a GitHub PR from the PR template without writing _PR_<feature>.md
 ---
 
 Base branch: ${1:-main}
 
 Create or update a pull request on GitHub for the current branch, without
-writing a `PR.md` file.
+writing a `_PR_<feature>.md` file.
 
 ## Instructions
 

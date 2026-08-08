@@ -6,7 +6,7 @@ Turn the current conversation context and codebase understanding into a spec. Do
 
 ## Process
 
-1. Explore the repo if you haven't already. Read `CONTEXT.md` and relevant ADRs.
+1. Explore the repo if you haven't already. Read `_CONTEXT_<feature>.md` and relevant ADRs.
 2. Sketch the seams at which the feature will be tested. Confirm them with the user before proceeding.
 3. Write the spec using this template:
 

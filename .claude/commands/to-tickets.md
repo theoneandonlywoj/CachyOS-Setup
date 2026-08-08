@@ -7,7 +7,7 @@ Break a spec, plan, or the current conversation into a set of tracer-bullet tick
 ## Process
 
 1. Gather context from the conversation or from a spec passed by the user.
-2. Explore the codebase if needed. Use `_CONTEXT_<feature>.md` vocabulary and respect ADRs.
+2. Explore the codebase if needed. Use `CONTEXT.md` vocabulary and respect ADRs.
 3. Draft vertical slices:
    - Each slice cuts a narrow but complete path through every layer
    - A completed slice is demoable or verifiable on its own

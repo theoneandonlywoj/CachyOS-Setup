@@ -7,13 +7,7 @@ description: Test-driven development. Use when the user wants to build features 
 
 TDD is the red → green loop. This skill is the reference that makes that loop produce tests worth keeping: what a good test is, where tests go, the anti-patterns, and the rules of the loop. Every section applies on every cycle — consult them before and during the loop, not after.
 
-When exploring the codebase, read `_CONTEXT_<feature>.md` (or the legacy `CONTEXT.md` when no feature context exists) so test names and interface vocabulary match the project's domain language, and respect ADRs in the area you're touching.
-
-## Phoenix and JavaScript browser seams
-
-For an agreed user-facing seam in a Phoenix, IEx, Bun, JavaScript, or TypeScript application, use the `playwright-cli-testing` skill. Drive the browser with `playwright-cli`, write the literal CLI steps and assertions into the scenario evidence, and use Chromium by default. Keep seed data independent per scenario and record screenshots for frontend state changes.
-
-Static branch inventory may mention private functions, but browser verification stays at the public browser seam. Mark branches that cannot be reached through that seam as `uncovered by Playwright` instead of testing internals directly.
+When exploring the codebase, read `CONTEXT.md` (if it exists) so test names and interface vocabulary match the project's domain language, and respect ADRs in the area you're touching.
 
 ## What a good test is
 

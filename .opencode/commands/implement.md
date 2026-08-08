@@ -7,7 +7,7 @@ Implement the work described by the user. Use the spec, tickets, or current conv
 ## Process
 
 1. Read the spec or tickets. If none, use the conversation context.
-2. Read `_CONTEXT_<feature>.md` and relevant ADRs.
+2. Read `CONTEXT.md` and relevant ADRs.
 3. Drive the implementation using the `tdd` skill where seams are pre-agreed.
 4. Run typechecking or equivalent validation regularly.
 5. Run single test files regularly.

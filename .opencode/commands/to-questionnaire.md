@@ -5,7 +5,7 @@ description: Turn a decision you cannot fully answer into a questionnaire for so
 Use the `to-questionnaire` skill for this request. Read
 `.opencode/skills/to-questionnaire/SKILL.md` and follow its workflow exactly:
 grill the send, identify the recipient and the information needed back, then
-write `_QUESTIONNAIRE_<feature>.md` in the current directory (feature slug from the topic).
+write `to-questionnaire-<slug>.md` in the current directory.
 
 User request:
 

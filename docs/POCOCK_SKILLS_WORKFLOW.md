@@ -148,7 +148,7 @@ reads `.opencode/commands/` and `.opencode/skills/`.
 | --- | --- | --- | --- |
 | `/ask-woj` | Command | Command | Routes a situation to the best local workflow. |
 | `/ask-matt` | Skill | Skill | Routes a situation through the complete upstream workflow map. |
-| `/grill-with-docs` | Command and skill | Command and skill | Interviews about an idea while maintaining `_CONTEXT_<feature>.md`, `_INTERVIEW_<feature>.md`, and ADRs. |
+| `/grill-with-docs` | Command and skill | Command and skill | Interviews about an idea while maintaining `CONTEXT.md` and ADRs. |
 | `/grill-me` | Skill | Skill | Interviews about a plan without writing repository context. |
 | `/grilling` | Skill | Skill | Runs the reusable interview primitive. |
 | `/prototype` | Skill | Skill | Answers a design question with throwaway code or UI. |
@@ -173,7 +173,7 @@ reads `.opencode/commands/` and `.opencode/skills/`.
 | `/writing-for-agents` | Skill | Skill | Guides the creation of agent-facing docs and skills. |
 | `/setup-matt-pocock-skills` | Skill | Skill | Configures tracker, labels, and domain-doc conventions. |
 | `/commit` | Command | Command | Generates a commit command from staged changes without running it. |
-| `/pr` | Command | Command | Generates `_PR_<feature>.md` from the diff and PR structure. |
+| `/pr` | Command | Command | Generates `PR.md` from the diff and PR structure. |
 | `/purge-claude-skills` | Command | Command | Removes global Claude skills while preserving other Claude config. |
 | `/purge-opencode-skills` | Command | Command | Removes global OpenCode skills while preserving other OpenCode config. |
 

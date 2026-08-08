@@ -72,6 +72,7 @@ Install in this order to satisfy dependencies and get the fastest path to a work
 3. Web Browsers
    - `chromium.fish`
    - Optional: `vivaldi.fish`
+   - Optional: `playwright_cli.fish`
 4. Editors & IDEs
    - `cursor.fish`, `emacs.fish`, `doom_emacs.fish`
 5. Language Runtime & Version Manager
@@ -102,6 +103,7 @@ Run category-by-category:
 # Web Browsers
 ./chromium.fish
 # Optional: ./vivaldi.fish
+# Optional: ./playwright_cli.fish
 
 # Editors & IDEs
 ./cursor.fish

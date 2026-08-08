@@ -8,6 +8,9 @@
         tmux-sync tmux-backup tmux-restore tmux-diff \
         openclaw-sync openclaw-backup openclaw-restore \
         opencode-backup opencode-sync opencode-restore opencode-diff \
+        add_pocock_skills delete_pocock_skills \
+        purge-claude-skills purge-opencode-skills \
+        mermaid-install mermaid-check \
         herdr-sync herdr-backup herdr-restore herdr-diff \
         hsync hbackup hrestore hdiff
 
@@ -36,6 +39,14 @@ OPENCLAW_BACKUP_DIR := $(HOME)/.openclaw_backup_$(TIMESTAMP)
 OPENCODE_DIR := $(HOME)/.config/opencode
 OPENCODE_REPO_DIR := ./.opencode
 OPENCODE_BACKUP_DIR := $(HOME)/.config/opencode_backup_$(TIMESTAMP)
+
+# Global agent skill paths
+CLAUDE_GLOBAL_SKILLS_DIR := $(HOME)/.claude/skills
+OPENCODE_GLOBAL_SKILLS_DIR := $(HOME)/.config/opencode/skills
+POCOCK_SKILLS_REPO := https://github.com/mattpocock/skills.git
+POCOCK_SKILLS_SOURCE_DIR := $(HOME)/.local/share/cachyos-setup/mattpocock-skills
+POCOCK_SKILLS_REF ?= main
+POCOCK_SKILLS_BUCKETS := engineering productivity
 
 # Herdr paths
 HERDR_REPO_DIR := ./.config/herdr
@@ -320,6 +331,135 @@ opencode-diff:
 		"$(OPENCODE_DIR)" "$(OPENCODE_REPO_DIR)" 2>/dev/null || echo "(directories differ or missing)"
 
 # ============================================================
+# GLOBAL AGENT SKILLS
+# ============================================================
+
+add_pocock_skills:
+	@echo "📦 Installing Matt Pocock engineering and productivity skills..."
+	@if [ -d "$(POCOCK_SKILLS_SOURCE_DIR)/.git" ]; then \
+		echo "🔄 Updating $(POCOCK_SKILLS_SOURCE_DIR)..."; \
+		git -C "$(POCOCK_SKILLS_SOURCE_DIR)" pull --ff-only origin "$(POCOCK_SKILLS_REF)"; \
+	elif [ -e "$(POCOCK_SKILLS_SOURCE_DIR)" ]; then \
+		echo "❌ $(POCOCK_SKILLS_SOURCE_DIR) exists but is not a Git checkout."; \
+		exit 1; \
+	else \
+		mkdir -p "$$(dirname "$(POCOCK_SKILLS_SOURCE_DIR)")"; \
+		git clone --depth 1 --branch "$(POCOCK_SKILLS_REF)" "$(POCOCK_SKILLS_REPO)" "$(POCOCK_SKILLS_SOURCE_DIR)"; \
+	fi
+	@for destination in "$(CLAUDE_GLOBAL_SKILLS_DIR)" "$(OPENCODE_GLOBAL_SKILLS_DIR)"; do \
+		if [ -L "$$destination" ]; then \
+			echo "❌ Refusing to use symlinked skills directory: $$destination"; \
+			exit 1; \
+		fi; \
+		mkdir -p "$$destination"; \
+		for bucket in $(POCOCK_SKILLS_BUCKETS); do \
+			if [ ! -d "$(POCOCK_SKILLS_SOURCE_DIR)/skills/$$bucket" ]; then \
+				echo "❌ Missing upstream skill bucket: $$bucket"; \
+				exit 1; \
+			fi; \
+			for skill_dir in "$(POCOCK_SKILLS_SOURCE_DIR)/skills/$$bucket"/*; do \
+				[ -d "$$skill_dir" ] || continue; \
+				[ -f "$$skill_dir/SKILL.md" ] || continue; \
+				name="$$(basename "$$skill_dir")"; \
+				target="$$destination/$$name"; \
+				if [ -L "$$target" ]; then \
+					link_target="$$(readlink "$$target")"; \
+					case "$$link_target" in \
+						"$(POCOCK_SKILLS_SOURCE_DIR)"/*) rm -f "$$target" ;; \
+						*) echo "❌ Refusing to replace unrelated skill: $$target"; exit 1 ;; \
+					esac; \
+				elif [ -e "$$target" ]; then \
+					echo "❌ Refusing to replace existing skill: $$target"; \
+					exit 1; \
+				fi; \
+				ln -s "$$skill_dir" "$$target"; \
+				echo "✅ Linked $$name into $$destination"; \
+			done; \
+		done; \
+	done
+	@echo "✅ Matt Pocock skills installed globally"
+
+delete_pocock_skills:
+	@removed=0; \
+	for destination in "$(CLAUDE_GLOBAL_SKILLS_DIR)" "$(OPENCODE_GLOBAL_SKILLS_DIR)"; do \
+		if [ ! -d "$$destination" ]; then \
+			echo "ℹ️  No skills directory at $$destination — skipping."; \
+			continue; \
+		fi; \
+		if [ -L "$$destination" ]; then \
+			echo "❌ Refusing to clean symlinked skills directory: $$destination"; \
+			exit 1; \
+		fi; \
+		for skill in "$$destination"/*; do \
+			[ -L "$$skill" ] || continue; \
+			link_target="$$(readlink "$$skill")"; \
+			case "$$link_target" in \
+				"$(POCOCK_SKILLS_SOURCE_DIR)"/*) rm -f "$$skill"; removed=$$((removed + 1)); echo "🗑  Removed $$skill" ;; \
+			esac; \
+		done; \
+	done; \
+	if [ -d "$(POCOCK_SKILLS_SOURCE_DIR)" ]; then \
+		rm -rf "$(POCOCK_SKILLS_SOURCE_DIR)"; \
+		echo "🗑  Removed $(POCOCK_SKILLS_SOURCE_DIR)"; \
+	fi; \
+	echo "✅ Removed $$removed Matt Pocock skill links"
+
+purge-claude-skills:
+	@if [ ! -d "$(CLAUDE_GLOBAL_SKILLS_DIR)" ]; then \
+		echo "❌ Claude skills directory is missing: $(CLAUDE_GLOBAL_SKILLS_DIR)"; \
+		exit 1; \
+	fi
+	@if [ -L "$(CLAUDE_GLOBAL_SKILLS_DIR)" ]; then \
+		echo "❌ Refusing to purge symlinked Claude skills directory: $(CLAUDE_GLOBAL_SKILLS_DIR)"; \
+		exit 1; \
+	fi
+	@echo "🗑  Purging skills inside $(CLAUDE_GLOBAL_SKILLS_DIR)..."
+	@find "$(CLAUDE_GLOBAL_SKILLS_DIR)" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+	@echo "✅ Claude skills purged; ~/.claude configuration was preserved"
+
+purge-opencode-skills:
+	@if [ ! -d "$(OPENCODE_GLOBAL_SKILLS_DIR)" ]; then \
+		echo "❌ OpenCode skills directory is missing: $(OPENCODE_GLOBAL_SKILLS_DIR)"; \
+		exit 1; \
+	fi
+	@if [ -L "$(OPENCODE_GLOBAL_SKILLS_DIR)" ]; then \
+		echo "❌ Refusing to purge symlinked OpenCode skills directory: $(OPENCODE_GLOBAL_SKILLS_DIR)"; \
+		exit 1; \
+	fi
+	@echo "🗑  Purging skills inside $(OPENCODE_GLOBAL_SKILLS_DIR)..."
+	@find "$(OPENCODE_GLOBAL_SKILLS_DIR)" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+	@echo "✅ OpenCode skills purged; ~/.config/opencode configuration was preserved"
+
+# ============================================================
+# MERMAID VALIDATION
+# ============================================================
+
+mermaid-install:
+	@if ! command -v mise >/dev/null 2>&1; then \
+		echo "❌ mise is required to install the pinned Mermaid CLI."; \
+		exit 1; \
+	fi
+	@echo "📦 Installing tools from .tool-versions..."
+	@PUPPETEER_SKIP_DOWNLOAD=1 mise install
+	@echo "✅ Mermaid CLI 11.15.0 is installed"
+
+mermaid-check: mermaid-install
+	@echo "🔍 Validating Mermaid diagrams with Mermaid CLI 11.15.0..."
+	@set -e; \
+	browser=$$(command -v chromium || command -v chromium-browser || command -v google-chrome || true); \
+	if [ -z "$$browser" ]; then \
+		echo "❌ Chromium or Google Chrome is required to render Mermaid diagrams."; \
+		exit 1; \
+	fi; \
+	tmp_dir=$$(mktemp -d); \
+	trap 'rm -rf "$$tmp_dir"' EXIT; \
+	mise exec -- node -e 'const fs=require("fs"); const text=fs.readFileSync("docs/POCOCK_SKILLS_WORKFLOW.md", "utf8"); const blocks=[...text.matchAll(/```mermaid\n([\s\S]*?)```/g)]; if (!blocks.length) { console.error("No Mermaid diagrams found."); process.exit(1); } fs.mkdirSync(process.argv[1], { recursive: true }); blocks.forEach((match, index) => fs.writeFileSync(`$${process.argv[1]}/diagram-$${index + 1}.mmd`, match[1])); console.log(`Extracted $${blocks.length} Mermaid diagrams.`);' "$$tmp_dir"; \
+	for diagram in "$$tmp_dir"/*.mmd; do \
+		PUPPETEER_EXECUTABLE_PATH="$$browser" mise exec -- mmdc -i "$$diagram" -o "$$diagram.svg" --quiet; \
+	done; \
+	echo "✅ All Mermaid diagrams passed Mermaid CLI 11.15.0"
+
+# ============================================================
 # HERDR CONFIGURATION
 # ============================================================
 
@@ -554,6 +694,16 @@ help:
 	@echo "  make opencode-sync    Deploy repo .opencode/ to ~/.config/opencode (with backup)"
 	@echo "  make opencode-restore Restore most recent opencode backup"
 	@echo "  make opencode-diff    Show differences between repo and installed"
+	@echo
+	@echo "GLOBAL AGENT SKILLS:"
+	@echo "  make add_pocock_skills    Install/update Pocock skills globally"
+	@echo "  make delete_pocock_skills Remove Pocock skill links and private cache"
+	@echo "  make purge-claude-skills  Remove all skills inside ~/.claude/skills"
+	@echo "  make purge-opencode-skills  Remove all skills inside ~/.config/opencode/skills"
+	@echo
+	@echo "MERMAID:"
+	@echo "  make mermaid-install   Install the pinned Mermaid CLI"
+	@echo "  make mermaid-check     Validate Mermaid diagrams with Mermaid CLI"
 	@echo
 	@echo "HERDR:"
 	@echo "  make herdr-backup     Backup current ~/.config/herdr/config.toml"

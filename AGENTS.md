@@ -14,26 +14,38 @@ Default canonical labels are used. See `docs/agents/triage-labels.md`.
 
 Single-context layout with `CONTEXT.md` and `docs/adr/`. See `docs/agents/domain.md`.
 
-## Skills
+## User-invoked skills
 
-- `/ask-woj` — which skill or flow fits your situation
-- `/grill-with-docs` — sharpen an idea by interview, updating `CONTEXT.md` and ADRs
-- `/triage` — move issues through triage states
-- `/improve-codebase-architecture` — scan codebase, present HTML report, grill through a candidate
-- `/to-spec` — turn conversation into a spec
-- `/to-tickets` — break spec into tracer-bullet tickets
-- `/implement` — build from spec/tickets
-- `/wayfinder` — chart decision-ticket map for foggy work
+These workflows run when explicitly selected by the user:
+
+- `/ask-woj` — route a situation to the best workflow
+- `/ask-matt` — upstream router for the full engineering and productivity set
+- `/grill-with-docs` — sharpen an idea while updating `CONTEXT.md` and ADRs
+- `/grill-me` — interview a plan without writing repository context
+- `/triage` — move incoming issues through the triage state machine
+- `/setup-matt-pocock-skills` — configure issue tracker and domain-doc conventions
+- `/to-spec` — turn a conversation into a spec
+- `/to-tickets` — break a spec into tracer-bullet tickets
+- `/implement` — build work from a spec or tickets
+- `/wayfinder` — chart decision tickets for a large, unclear effort
+- `/handoff` — write a portable handoff for another session or harness
+- `/teach` — teach a concept over multiple sessions
+- `/to-questionnaire` — capture questions for a person who must decide
 
 ## Model-invoked skills
 
 These are auto-reachable when the conversation matches their triggers:
 
+- `grilling` — the interview primitive used by planning workflows
 - `prototype` — throwaway code to answer a design question
 - `diagnosing-bugs` — disciplined bug diagnosis loop
 - `research` — background research with cited output
-- `tdd` — red-green-refactor test-driven development
+- `tdd` — red-green-refactor development
 - `domain-modeling` — sharpen project vocabulary
 - `codebase-design` — deep-module design vocabulary
-- `code-review` — two-axis review (Standards + Spec)
+- `code-review` — two-axis Standards and Spec review
 - `resolving-merge-conflicts` — hunk-by-hunk conflict resolution
+- `improve-codebase-architecture` — scan for deepening opportunities
+- `wizard` — generate a repeatable human-in-the-loop setup script
+- `wait-what` — re-explain a message that did not land
+- `writing-for-agents` — guidance for agent-facing documents

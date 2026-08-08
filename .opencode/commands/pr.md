@@ -6,7 +6,8 @@ subtask: true
 
 Base branch: ${1:-main}
 
-Here is the PR template from @.github/PULL_REQUEST_TEMPLATE.md to use as the structure.
+If `.github/PULL_REQUEST_TEMPLATE.md` exists, use it as the structure. If it
+does not exist, use the sections below as the structure.
 
 Using the PR template structure above, generate a complete PR description. Fill in all sections:
 

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://opencode.ai/tui.json",
+  "keybinds": {
+    "input_line_home": "home",
+    "input_line_end": "end",
+    "input_buffer_home": "ctrl+home",
+    "input_buffer_end": "ctrl+end",
+    "input_select_line_home": "shift+home",
+    "input_select_line_end": "shift+end",
+    "input_select_buffer_home": "ctrl+shift+home",
+    "input_select_buffer_end": "ctrl+shift+end",
+    "dialog.select.home": "home",
+    "dialog.select.end": "end",
+    "messages_first": "home",
+    "messages_last": "end"
+  }
+}

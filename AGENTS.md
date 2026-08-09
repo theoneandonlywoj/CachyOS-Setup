@@ -14,6 +14,10 @@ Default canonical labels are used. See `docs/agents/triage-labels.md`.
 
 Single-context layout with `CONTEXT.md` and `docs/adr/`. See `docs/agents/domain.md`.
 
+## Skills and commands layout
+
+Parallel `.opencode/` and `.claude/` trees must stay in sync. See `docs/agents/skills-layout.md` and `make check-skills-mirror`.
+
 ## User-invoked skills
 
 These workflows run when explicitly selected by the user:

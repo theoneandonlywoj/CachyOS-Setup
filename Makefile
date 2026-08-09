@@ -10,6 +10,7 @@
         opencode-backup opencode-sync opencode-restore opencode-diff \
         add_pocock_skills delete_pocock_skills \
         purge-claude-skills purge-opencode-skills \
+        check-skills-mirror \
         mermaid-install mermaid-check \
         herdr-sync herdr-backup herdr-restore herdr-diff \
         hsync hbackup hrestore hdiff
@@ -431,6 +432,38 @@ purge-opencode-skills:
 	@echo "✅ OpenCode skills purged; ~/.config/opencode configuration was preserved"
 
 # ============================================================
+# CROSS-HARNESS MIRROR CHECK
+# ============================================================
+
+# Verifies that .opencode/ and .claude/ skills and commands stay in sync,
+# ignoring the only legitimate differences: the harness path token
+# (.opencode/ vs .claude/) and OpenCode-only command frontmatter
+# (agent: / subtask:). Fails non-zero on any other drift.
+check-skills-mirror:
+	@echo "🔍 Checking cross-harness skill/command mirror..."
+	@status=0; \
+	for dir in skills commands; do \
+	  for f in $$(cd .opencode/$$dir && find . -type f | sed 's#^\./##'); do \
+	    a=".opencode/$$dir/$$f"; b=".claude/$$dir/$$f"; \
+	    if [ ! -f "$$b" ]; then echo "  ❌ MISSING in .claude/$$dir: $$f"; status=1; continue; fi; \
+	    da=$$(sed -e '/^agent:/d' -e '/^subtask:/d' -e 's#\.opencode#HARNESS#g' -e 's#\.claude#HARNESS#g' "$$a"); \
+	    db=$$(sed -e '/^agent:/d' -e '/^subtask:/d' -e 's#\.opencode#HARNESS#g' -e 's#\.claude#HARNESS#g' "$$b"); \
+	    if [ "$$da" != "$$db" ]; then \
+	      echo "  ❌ DRIFT in $$dir/$$f"; \
+	      tmp_a=$$(mktemp); tmp_b=$$(mktemp); \
+	      printf '%s\n' "$$da" > "$$tmp_a"; printf '%s\n' "$$db" > "$$tmp_b"; \
+	      diff -u "$$tmp_a" "$$tmp_b" | sed 's/^/    /'; \
+	      rm -f "$$tmp_a" "$$tmp_b"; \
+	      status=1; \
+	    fi; \
+	  done; \
+	  for f in $$(cd .claude/$$dir && find . -type f | sed 's#^\./##'); do \
+	    [ -f ".opencode/$$dir/$$f" ] || { echo "  ❌ MISSING in .opencode/$$dir: $$f"; status=1; }; \
+	  done; \
+	done; \
+	if [ $$status -eq 0 ]; then echo "  ✅ Skill/command mirror is in sync."; else echo "  ❌ Mirror drift detected; see above."; exit 1; fi
+
+# ============================================================
 # MERMAID VALIDATION
 # ============================================================
 
@@ -700,6 +733,9 @@ help:
 	@echo "  make delete_pocock_skills Remove Pocock skill links and private cache"
 	@echo "  make purge-claude-skills  Remove all skills inside ~/.claude/skills"
 	@echo "  make purge-opencode-skills  Remove all skills inside ~/.config/opencode/skills"
+	@echo
+	@echo "CHECKS:"
+	@echo "  make check-skills-mirror  Verify .opencode/ and .claude/ skills and commands stay in sync"
 	@echo
 	@echo "MERMAID:"
 	@echo "  make mermaid-install   Install the pinned Mermaid CLI"

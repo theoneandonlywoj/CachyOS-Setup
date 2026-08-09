@@ -3,3 +3,7 @@ mise.toml
 
 # Playwright CLI session snapshots and screenshots
 .playwright-cli/
+
+# Local reflection configuration
+.claude/skills/reflect/.env
+.opencode/skills/reflect/.env

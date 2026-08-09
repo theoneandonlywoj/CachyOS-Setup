@@ -149,6 +149,7 @@ reads `.opencode/commands/` and `.opencode/skills/`.
 | `/ask-woj` | Command | Command | Routes a situation to the best local workflow. |
 | `/ask-matt` | Skill | Skill | Routes a situation through the complete upstream workflow map. |
 | `/grill-with-docs` | Command and skill | Command and skill | Interviews about an idea while maintaining `CONTEXT.md` and ADRs. |
+| `/reflect` | Command and skill | Command and skill | Analyzes recent repository-scoped harness conversations and proposes reviewed changes to local skills and `AGENTS.md`. |
 | `/grill-me` | Skill | Skill | Interviews about a plan without writing repository context. |
 | `/grilling` | Skill | Skill | Runs the reusable interview primitive. |
 | `/prototype` | Skill | Skill | Answers a design question with throwaway code or UI. |

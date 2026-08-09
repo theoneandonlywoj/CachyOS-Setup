@@ -1,0 +1,773 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+readonly WINDOW_SECONDS=$((7 * 24 * 60 * 60))
+readonly DEFAULT_CONTEXT_PERCENTAGE=20
+readonly DEFAULT_FALLBACK_CONTEXT=100000
+readonly DEFAULT_WORKER_LIMIT=4
+readonly DEFAULT_WORKER_RETRIES=2
+
+die() {
+  printf 'reflect: error: %s\n' "$*" >&2
+  exit 1
+}
+
+warn() {
+  printf 'reflect: warning: %s\n' "$*" >&2
+}
+
+usage() {
+  cat <<'EOF'
+Usage:
+  scripts/reflect check [--config PATH]
+  scripts/reflect snapshot [--config PATH] [--all] [--include-tools] [--model-context-tokens N] [SKILL_OR_PATH ...]
+  scripts/reflect resume --run-dir PATH
+  scripts/reflect finalize --proposal PATH --patch PATH [--kind normal|self|new-skill]
+  scripts/reflect validate --proposal PATH [--self]
+  scripts/reflect review-all --root PATH
+  scripts/reflect apply --proposal PATH
+  scripts/reflect apply-self --proposal PATH
+  scripts/reflect reject --proposal PATH
+  scripts/reflect reject-self --proposal PATH
+EOF
+}
+
+repo_root() {
+  git rev-parse --show-toplevel 2>/dev/null || die "run this command inside the repository being reflected"
+}
+
+canonical_path() {
+  realpath -m "$1"
+}
+
+trim_quotes() {
+  local value="$1"
+  if [[ "$value" == \"*\" && "$value" == *\" ]]; then
+    value="${value:1:${#value}-2}"
+  elif [[ "$value" == \'*\' && "$value" == *\' ]]; then
+    value="${value:1:${#value}-2}"
+  fi
+  printf '%s' "$value"
+}
+
+load_config() {
+  local config_path="${1:-}"
+  REFLECT_OPENCODE_DB_PATH=""
+  REFLECT_CLAUDE_DATA_PATH=""
+  REFLECT_USE_OPENCODE=true
+  REFLECT_USE_CLAUDE=true
+  REFLECT_MODEL_CONTEXT_PERCENTAGE_SIZE="$DEFAULT_CONTEXT_PERCENTAGE"
+  REFLECT_FALLBACK_CONTEXT_MAX_TOKENS="$DEFAULT_FALLBACK_CONTEXT"
+  REFLECT_WORKER_LIMIT="$DEFAULT_WORKER_LIMIT"
+  MAX_REFLECT_WORKER_RETRIES="$DEFAULT_WORKER_RETRIES"
+
+  [[ -z "$config_path" || -f "$config_path" ]] || die "configuration file does not exist: $config_path"
+  [[ -z "$config_path" ]] && return
+
+  local line key value
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ "$line" =~ ^[[:space:]]*# || -z "${line//[[:space:]]/}" ]] && continue
+    [[ "$line" =~ ^[[:space:]]*([A-Z][A-Z0-9_]*)=(.*)$ ]] || continue
+    key="${BASH_REMATCH[1]}"
+    value="$(trim_quotes "${BASH_REMATCH[2]}")"
+    case "$key" in
+      REFLECT_OPENCODE_DB_PATH|REFLECT_CLAUDE_DATA_PATH|REFLECT_USE_OPENCODE|REFLECT_USE_CLAUDE|REFLECT_MODEL_CONTEXT_PERCENTAGE_SIZE|REFLECT_FALLBACK_CONTEXT_MAX_TOKENS|REFLECT_WORKER_LIMIT|MAX_REFLECT_WORKER_RETRIES)
+        printf -v "$key" '%s' "$value"
+        ;;
+    esac
+  done < "$config_path"
+}
+
+dependency_hint() {
+  local missing="$1"
+  if command -v pacman >/dev/null 2>&1; then
+    printf 'Suggested installation: sudo pacman -S %s\n' "$missing"
+  elif command -v apt-get >/dev/null 2>&1; then
+    printf 'Suggested installation: sudo apt-get install %s\n' "$missing"
+  elif command -v dnf >/dev/null 2>&1; then
+    printf 'Suggested installation: sudo dnf install %s\n' "$missing"
+  elif command -v brew >/dev/null 2>&1; then
+    printf 'Suggested installation: brew install %s\n' "$missing"
+  else
+    printf 'Install these tools with your package manager: %s\n' "$missing"
+  fi
+}
+
+check_dependencies() {
+  local missing=() command_name
+  for command_name in bash sqlite3 jq git sha256sum realpath; do
+    command -v "$command_name" >/dev/null 2>&1 || missing+=("$command_name")
+  done
+  if ((${#missing[@]})); then
+    printf 'Missing reflection dependencies: %s\n' "${missing[*]}" >&2
+    dependency_hint "${missing[*]}" >&2
+    printf 'Install them, then rerun the command. No packages were installed.\n' >&2
+    return 1
+  fi
+}
+
+valid_integer() {
+  [[ "$1" =~ ^[0-9]+$ ]]
+}
+
+validate_config() {
+  valid_integer "$REFLECT_MODEL_CONTEXT_PERCENTAGE_SIZE" || die "REFLECT_MODEL_CONTEXT_PERCENTAGE_SIZE must be an integer"
+  valid_integer "$REFLECT_FALLBACK_CONTEXT_MAX_TOKENS" || die "REFLECT_FALLBACK_CONTEXT_MAX_TOKENS must be an integer"
+  valid_integer "$REFLECT_WORKER_LIMIT" || die "REFLECT_WORKER_LIMIT must be an integer"
+  valid_integer "$MAX_REFLECT_WORKER_RETRIES" || die "MAX_REFLECT_WORKER_RETRIES must be an integer"
+  ((REFLECT_MODEL_CONTEXT_PERCENTAGE_SIZE > 0)) || die "REFLECT_MODEL_CONTEXT_PERCENTAGE_SIZE must be greater than zero"
+  ((REFLECT_FALLBACK_CONTEXT_MAX_TOKENS > 0)) || die "REFLECT_FALLBACK_CONTEXT_MAX_TOKENS must be greater than zero"
+  ((REFLECT_WORKER_LIMIT > 0)) || die "REFLECT_WORKER_LIMIT must be greater than zero"
+  if ((REFLECT_MODEL_CONTEXT_PERCENTAGE_SIZE > 20)); then
+    warn "REFLECT_MODEL_CONTEXT_PERCENTAGE_SIZE=${REFLECT_MODEL_CONTEXT_PERCENTAGE_SIZE} exceeds the documented 20% default"
+  fi
+  case "${REFLECT_USE_OPENCODE,,}" in true|false) ;; *) die "REFLECT_USE_OPENCODE must be true or false" ;; esac
+  case "${REFLECT_USE_CLAUDE,,}" in true|false) ;; *) die "REFLECT_USE_CLAUDE must be true or false" ;; esac
+}
+
+default_opencode_db() {
+  local xdg_data="${XDG_DATA_HOME:-$HOME/.local/share}"
+  local candidate
+  for candidate in "$xdg_data/opencode/opencode.db" "$HOME/.local/share/opencode/opencode.db" "$HOME/.config/opencode/opencode.db"; do
+    if [[ -f "$candidate" ]]; then
+      canonical_path "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+default_claude_data() {
+  local xdg_data="${XDG_DATA_HOME:-$HOME/.local/share}"
+  local candidate
+  for candidate in "$HOME/.claude" "$xdg_data/claude"; do
+    if [[ -d "$candidate" ]]; then
+      canonical_path "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+resolve_sources() {
+  OPENCODE_DB=""
+  CLAUDE_DATA=""
+  if [[ "${REFLECT_USE_OPENCODE,,}" == true ]]; then
+    if [[ -n "$REFLECT_OPENCODE_DB_PATH" ]]; then
+      if [[ -f "$REFLECT_OPENCODE_DB_PATH" ]]; then
+        OPENCODE_DB="$(canonical_path "$REFLECT_OPENCODE_DB_PATH")"
+      else
+        warn "OpenCode database path does not exist; source skipped: $REFLECT_OPENCODE_DB_PATH"
+      fi
+    else
+      OPENCODE_DB="$(default_opencode_db || true)"
+    fi
+  fi
+  if [[ "${REFLECT_USE_CLAUDE,,}" == true ]]; then
+    if [[ -n "$REFLECT_CLAUDE_DATA_PATH" ]]; then
+      if [[ -d "$REFLECT_CLAUDE_DATA_PATH" || -f "$REFLECT_CLAUDE_DATA_PATH" ]]; then
+        CLAUDE_DATA="$(canonical_path "$REFLECT_CLAUDE_DATA_PATH")"
+      else
+        warn "Claude data path does not exist; source skipped: $REFLECT_CLAUDE_DATA_PATH"
+      fi
+    else
+      CLAUDE_DATA="$(default_claude_data || true)"
+    fi
+  fi
+}
+
+context_budget() {
+  local model_context="${1:-}"
+  if [[ -n "$model_context" ]]; then
+    valid_integer "$model_context" || die "model context must be an integer"
+    printf '%s' "$((model_context * REFLECT_MODEL_CONTEXT_PERCENTAGE_SIZE / 100))"
+  else
+    printf '%s' "$REFLECT_FALLBACK_CONTEXT_MAX_TOKENS"
+  fi
+}
+
+resolve_targets() {
+  local root="$1" requested_json="$2" name raw result='[]' claude_path opencode_path
+  local -a names=()
+  if [[ "$requested_json" == '[]' ]]; then
+    while IFS= read -r claude_path; do
+      [[ -d "$claude_path" ]] || continue
+      names+=("${claude_path##*/}")
+    done < <(find "$root/.claude/skills" -mindepth 1 -maxdepth 1 -type d -print 2>/dev/null | sort)
+    while IFS= read -r opencode_path; do
+      [[ -d "$opencode_path" ]] || continue
+      names+=("${opencode_path##*/}")
+    done < <(find "$root/.opencode/skills" -mindepth 1 -maxdepth 1 -type d -print 2>/dev/null | sort)
+  else
+    while IFS= read -r raw; do
+      [[ -n "$raw" ]] || continue
+      if [[ "$raw" == "$root/.claude/skills/"* ]]; then
+        name="${raw#"$root/.claude/skills/"}"; name="${name%%/*}"
+      elif [[ "$raw" == "$root/.opencode/skills/"* ]]; then
+        name="${raw#"$root/.opencode/skills/"}"; name="${name%%/*}"
+      else
+        case "$raw" in
+          .claude/skills/*) name="${raw#.claude/skills/}"; name="${name%%/*}" ;;
+          .opencode/skills/*) name="${raw#.opencode/skills/}"; name="${name%%/*}" ;;
+          *) name="${raw##*/}" ;;
+        esac
+      fi
+      names+=("$name")
+    done < <(jq -r '.[]' <<< "$requested_json")
+  fi
+  for name in "${names[@]}"; do
+    [[ "$name" =~ ^[A-Za-z0-9_-]+$ ]] || die "invalid skill name or path: $name"
+    if jq -e --arg name "$name" 'any(.[]; .name == $name)' <<< "$result" >/dev/null; then
+      continue
+    fi
+    claude_path=".claude/skills/$name"
+    opencode_path=".opencode/skills/$name"
+    [[ -d "$root/$claude_path" || -d "$root/$opencode_path" ]] || die "skill does not exist in either harness: $name"
+    result="$(jq -c --arg name "$name" --arg claude "$claude_path" --arg opencode "$opencode_path" '. + [{name:$name,claude_path:$claude,opencode_path:$opencode}]' <<< "$result")"
+  done
+  jq -cn --argjson targets "$result" '{skills:$targets,always:["AGENTS.md"]}'
+}
+
+sql_quote() {
+  local value="$1"
+  value=${value//\'/\'\'}
+  printf "'%s'" "$value"
+}
+
+sql_like_quote() {
+  local value="$1"
+  value=${value//\\/\\\\}
+  value=${value//%/\\%}
+  value=${value//_/\\_}
+  sql_quote "$value/%"
+}
+
+repo_filter_sql() {
+  local root="$1" all_repositories="$2"
+  if [[ "$all_repositories" == true ]]; then
+    printf 'directory IS NOT NULL AND length(directory) > 0 AND 1=1'
+  else
+    printf "directory IS NOT NULL AND length(directory) > 0 AND (directory = %s OR directory LIKE %s ESCAPE '\\\\')" "$(sql_quote "$root")" "$(sql_like_quote "$root")"
+  fi
+}
+
+to_epoch_ms() {
+  local value="$1" seconds
+  if [[ "$value" =~ ^[0-9]+$ ]]; then
+    if ((value > 100000000000)); then
+      printf '%s' "$value"
+    else
+      printf '%s000' "$value"
+    fi
+    return 0
+  fi
+  seconds="$(date -d "$value" +%s 2>/dev/null || true)"
+  [[ "$seconds" =~ ^[0-9]+$ ]] || return 1
+  printf '%s000' "$seconds"
+}
+
+redact_json() {
+  jq -c '
+    def redact:
+      walk(if type == "string" then
+        gsub("-----BEGIN [A-Z ]+-----[\\s\\S]*?-----END [A-Z ]+-----"; "[REDACTED_PRIVATE_KEY]")
+        | gsub("(sk|rk|ghp|github_pat|xox[baprs])-?[A-Za-z0-9_\\-]{16,}"; "[REDACTED_TOKEN]")
+        | gsub("AKIA[0-9A-Z]{16}"; "[REDACTED_ACCESS_KEY]")
+        | gsub("(?i)bearer[[:space:]]+[A-Za-z0-9._~+/=-]+"; "Bearer [REDACTED_TOKEN]")
+        | gsub("(?i)(password|passwd|secret|token|api[_-]?key|authorization)[[:space:]]*[:=][[:space:]]*(\"[^\"]*\"|\u0027[^\u0027]*\u0027|[^,;[:space:]]+)"; "\\1=[REDACTED_SECRET]")
+      else . end);
+    redact
+  '
+}
+
+collect_opencode() {
+  local db="$1" root="$2" all_repositories="$3" cutoff="$4" started="$5" output_dir="$6" include_tools="$7"
+  local filter session_rows sid directory title created updated model messages parts session_file
+  filter="$(repo_filter_sql "$root" "$all_repositories")"
+  session_rows="$(sqlite3 -readonly -json "$db" "PRAGMA query_only=ON; SELECT id,directory,title,time_created,time_updated,model FROM session WHERE time_updated >= $((cutoff * 1000)) AND time_updated <= $((started * 1000)) AND $filter ORDER BY time_updated DESC,id;")" || die "could not query OpenCode database: $db"
+  while IFS= read -r session_row; do
+    [[ -n "$session_row" ]] || continue
+    sid="$(jq -r '.id' <<< "$session_row")"
+    directory="$(jq -r '.directory // .path // ""' <<< "$session_row")"
+    title="$(jq -r '.title // ""' <<< "$session_row")"
+    created="$(jq -r '.time_created // 0' <<< "$session_row")"
+    updated="$(jq -r '.time_updated // 0' <<< "$session_row")"
+    model="$(jq -r '.model // ""' <<< "$session_row")"
+    messages="$(sqlite3 -readonly -json "$db" "SELECT id,time_created,time_updated,data FROM message WHERE session_id=$(sql_quote "$sid") ORDER BY time_created,id;")"
+    if [[ "$include_tools" == true ]]; then
+      parts="$(sqlite3 -readonly -json "$db" "SELECT id,message_id,time_created,time_updated,data FROM part WHERE session_id=$(sql_quote "$sid") ORDER BY time_created,id;")"
+    else
+      parts='[]'
+    fi
+    session_file="$output_dir/opencode-$sid.json"
+    jq -n \
+      --arg source opencode --arg session_id "$sid" --arg directory "$directory" --arg title "$title" --arg model "$model" \
+      --argjson time_created "$created" --argjson time_updated "$updated" --argjson messages "$messages" --argjson parts "$parts" \
+      '{source:$source,session_id:$session_id,directory:$directory,title:$title,model:$model,time_created:$time_created,time_updated:$time_updated,messages:$messages,parts:$parts}' \
+      | redact_json > "$session_file"
+  done < <(jq -c '.[]' <<< "$session_rows")
+}
+
+collect_claude() {
+  local data_path="$1" root="$2" all_repositories="$3" cutoff="$4" started="$5" output_dir="$6"
+  local source_file line normalized session_id directory created updated title text target
+  [[ -d "$data_path" || -f "$data_path" ]] || return 0
+  while IFS= read -r source_file; do
+    while IFS= read -r line || [[ -n "$line" ]]; do
+      [[ -n "$line" ]] || continue
+      normalized="$(jq -c '
+        def first($xs): ($xs | map(select(. != null and . != "")) | .[0] // "");
+        {session_id:first([.session_id,.sessionId,.conversation_id,.conversationId,.id]),
+         directory:first([.directory,.cwd,.working_directory,.project_path,.projectPath]),
+         created:first([.time_created,.timestamp,.created_at,.createdAt]),
+         updated:first([.time_updated,.updated_at,.updatedAt,.timestamp]),
+         title:first([.title,.name]),
+         text:first([.text,.content,.message.content,.message.text,.prompt,.response])}
+        | select(.session_id != "" and .text != "")
+      ' <<< "$line" 2>/dev/null || true)"
+      [[ -n "$normalized" ]] || continue
+      session_id="$(jq -r '.session_id' <<< "$normalized")"
+      directory="$(jq -r '.directory // ""' <<< "$normalized")"
+      [[ -n "$directory" ]] || continue
+      [[ "$all_repositories" == true || "$directory" == "$root" || "$directory" == "$root"/* ]] || continue
+      created="$(jq -r '.created // 0' <<< "$normalized")"
+      updated="$(jq -r '.updated // .created // 0' <<< "$normalized")"
+      updated="$(to_epoch_ms "$updated" || true)"
+      [[ "$updated" =~ ^[0-9]+$ ]] || continue
+      ((updated >= cutoff * 1000 && updated <= started * 1000)) || continue
+      title="$(jq -r '.title // ""' <<< "$normalized")"
+      text="$(jq -r '.text // ""' <<< "$normalized")"
+      target="$output_dir/claude-$session_id.jsonl"
+      jq -n --arg source claude --arg session_id "$session_id" --arg directory "$directory" --arg title "$title" \
+        --argjson time_updated "$updated" --arg text "$text" \
+        '{source:$source,session_id:$session_id,directory:$directory,title:$title,time_updated:$time_updated,text:$text}' \
+        | redact_json >> "$target"
+    done < "$source_file"
+  done < <(find "$data_path" -type f \( -name '*.jsonl' -o -name '*.json' \) -print 2>/dev/null)
+  local file grouped
+  for file in "$output_dir"/claude-*.jsonl; do
+    [[ -f "$file" ]] || continue
+    session_id="${file##*/claude-}"
+    session_id="${session_id%.jsonl}"
+    grouped="$(jq -s --arg sid "$session_id" '.[0] as $first | {source:"claude",session_id:$sid,directory:($first.directory // ""),title:($first.title // ""),time_updated:([.[].time_updated] | max),messages:[.[] | {role:"unknown",text:.text,time_updated:.time_updated}]}' "$file")"
+    printf '%s\n' "$grouped" | redact_json > "$output_dir/claude-$session_id.json"
+    rm -f "$file"
+  done
+}
+
+write_run_manifest() {
+  local run_dir="$1" root="$2" cutoff="$3" started="$4" all_repositories="$5" include_tools="$6" budget="$7" model_context="$8" config_path="$9" targets_json="${10}"
+  jq -n \
+    --arg run_id "$(basename "$run_dir")" --arg repository "$root" --arg config "${config_path:-}" \
+    --argjson cutoff "$cutoff" --argjson started "$started" --argjson all_repositories "$all_repositories" --argjson include_tools "$include_tools" \
+    --argjson evidence_budget "$budget" --arg model_context "$model_context" --argjson worker_limit "$REFLECT_WORKER_LIMIT" \
+    --argjson worker_retries "$MAX_REFLECT_WORKER_RETRIES" --argjson targets "$targets_json" \
+    '{run_id:$run_id,repository:$repository,config:$config,cutoff_epoch:$cutoff,started_epoch:$started,all_repositories:$all_repositories,include_tools:$include_tools,evidence_budget:$evidence_budget,model_context_tokens:($model_context|if . == "" then null else tonumber end),worker_limit:$worker_limit,worker_retries:$worker_retries,targets:$targets}' \
+    > "$run_dir/run.json"
+}
+
+snapshot() {
+  local config_path="" all_repositories=false include_tools=false model_context="" root cutoff started budget run_dir targets_json="[]" resolved_targets
+  while (($#)); do
+    case "$1" in
+      --config) config_path="$2"; shift 2 ;;
+      --all) all_repositories=true; shift ;;
+      --include-tools) include_tools=true; shift ;;
+      --model-context-tokens) model_context="$2"; shift 2 ;;
+      --help) usage; exit 0 ;;
+      --*) die "unknown snapshot option: $1" ;;
+      *) targets_json="$(jq -c --arg target "$1" '. + [$target]' <<< "$targets_json")"; shift ;;
+    esac
+  done
+  load_config "$config_path"
+  check_dependencies
+  validate_config
+  root="$(repo_root)"
+  started="$(date +%s)"
+  cutoff=$(( started - WINDOW_SECONDS ))
+  budget="$(context_budget "$model_context")"
+  run_dir="$root/docs/reflect/$(date -u +%Y%m%dT%H%M%SZ)"
+  [[ ! -e "$run_dir" ]] || die "run directory already exists: $run_dir"
+  mkdir -p "$run_dir/snapshot/sessions"
+  resolve_sources
+  resolved_targets="$(resolve_targets "$root" "$targets_json")"
+  write_run_manifest "$run_dir" "$root" "$cutoff" "$started" "$all_repositories" "$include_tools" "$budget" "$model_context" "$config_path" "$resolved_targets"
+  jq -n --arg path "$OPENCODE_DB" --arg enabled "${REFLECT_USE_OPENCODE,,}" --arg detected "$([[ -n "$OPENCODE_DB" ]] && printf true || printf false)" '{source:"opencode",enabled:($enabled == "true"),detected:($detected == "true"),path:$path}' > "$run_dir/snapshot/opencode-status.json"
+  jq -n --arg path "$CLAUDE_DATA" --arg enabled "${REFLECT_USE_CLAUDE,,}" --arg detected "$([[ -n "$CLAUDE_DATA" ]] && printf true || printf false)" '{source:"claude",enabled:($enabled == "true"),detected:($detected == "true"),path:$path}' > "$run_dir/snapshot/claude-status.json"
+  if [[ -n "$OPENCODE_DB" ]]; then
+    collect_opencode "$OPENCODE_DB" "$root" "$all_repositories" "$cutoff" "$started" "$run_dir/snapshot/sessions" "$include_tools"
+  fi
+  if [[ -n "$CLAUDE_DATA" ]]; then
+    collect_claude "$CLAUDE_DATA" "$root" "$all_repositories" "$cutoff" "$started" "$run_dir/snapshot/sessions"
+  fi
+  local session_count
+  session_count=$(find "$run_dir/snapshot/sessions" -type f -name '*.json' -print | wc -l | tr -d ' ')
+  jq --argjson sessions "$session_count" '. + {session_count:$sessions,status:"snapshot-complete"}' "$run_dir/run.json" > "$run_dir/run.json.tmp"
+  mv "$run_dir/run.json.tmp" "$run_dir/run.json"
+  cat <<EOF
+Reflection snapshot created: $run_dir
+Sessions: $session_count
+Evidence budget: $budget estimated tokens per model input
+Next: delegate one worker per session, write findings under $run_dir/batch_001/, then synthesize the final proposal.
+EOF
+}
+
+frontmatter_value() {
+  local key="$1" file="$2"
+  awk -v key="$key" 'BEGIN { in_front=0 } /^---$/ { in_front = !in_front; next } in_front && $0 ~ "^" key ":" { sub("^" key ":[[:space:]]*", ""); print; exit }' "$file"
+}
+
+patch_paths() {
+  local patch="$1"
+  awk '
+    function emit(path) { sub(/^a\//, "", path); sub(/^b\//, "", path); if (path != "dev/null") print path }
+    /^diff --git / { seen_diff=1; in_header=1; a=$3; b=$4; emit(a); emit(b) }
+    /^--- / && in_header { emit($2); next }
+    /^\+\+\+ / && in_header { emit($2); in_header=0; next }
+    /^@@/ { in_header=0 }
+    END { if (!seen_diff) exit 1 }
+  ' "$patch" | sort -u
+}
+
+allowed_path() {
+  local path="$1" kind="$2"
+  [[ "$path" != /* && "$path" != *".."* ]] || return 1
+  [[ "$path" != *.env ]] || return 1
+  case "$path" in
+    scripts/reflect|docs/reflect/REFLECT_WORKFLOW.md|docs/reflect/CONFIGURATION.md|.claude/skills/reflect/.env.example|.opencode/skills/reflect/.env.example|.gitignore)
+      [[ "$kind" == self ]] && return 0
+      return 1
+      ;;
+    *.env|*.env.example) return 1 ;;
+    AGENTS.md|.claude/skills/*|.opencode/skills/*|.claude/commands/*|.opencode/commands/*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+target_manifest_path() {
+  local proposal="$1"
+  printf '%s.targets.sha256' "${proposal%.md}"
+}
+
+create_target_manifest() {
+  local patch="$1" output="$2" root path
+  root="$(repo_root)"
+  : > "$output"
+  while IFS= read -r path; do
+    [[ -n "$path" ]] || continue
+    if [[ -f "$root/$path" ]]; then
+      (cd "$root" && sha256sum -- "$path") >> "$output"
+    else
+      printf '%s  %s\n' MISSING "$path" >> "$output"
+    fi
+  done < <(patch_paths "$patch")
+}
+
+validate_manifest_coverage() {
+  local patch="$1" manifest="$2" patch_paths_file manifest_paths_file missing
+  patch_paths_file="$(mktemp)"
+  manifest_paths_file="$(mktemp)"
+  patch_paths "$patch" | sort -u > "$patch_paths_file" || die "patch has no parseable Git diff headers"
+  awk '{ print $2 }' "$manifest" | sort -u > "$manifest_paths_file"
+  missing="$(comm -23 "$patch_paths_file" "$manifest_paths_file")"
+  rm -f "$patch_paths_file" "$manifest_paths_file"
+  [[ -z "$missing" ]] || die "target manifest does not cover patch paths: $missing"
+}
+
+patch_has_deletion() {
+  awk '/^--- \/dev\/null$|^\+\+\+ \/dev\/null$/ { found=1 } END { exit(found ? 0 : 1) }' "$1"
+}
+
+set_status() {
+  local file="$1" status="$2" tmp
+  tmp="$(mktemp)"
+  awk -v status="$status" 'BEGIN { in_front=0 } NR == 1 && $0 == "---" { in_front=1; print; next } in_front && $0 == "---" { in_front=0; print; next } in_front && $0 ~ /^status:/ { print "status: " status; next } { print }' "$file" > "$tmp"
+  mv "$tmp" "$file"
+}
+
+validate_target_manifest() {
+  local manifest="$1" root path expected actual
+  root="$(repo_root)"
+  [[ -f "$manifest" ]] || die "target manifest is missing: $manifest"
+  while read -r expected path; do
+    [[ -n "${path:-}" ]] || continue
+    if [[ "$expected" == MISSING ]]; then
+      [[ ! -e "$root/$path" ]] || die "target changed since proposal generation: $path"
+    else
+      [[ -f "$root/$path" ]] || die "target changed since proposal generation: $path"
+      actual="$(cd "$root" && sha256sum -- "$path" | awk '{print $1}')"
+      [[ "$actual" == "$expected" ]] || die "target changed since proposal generation: $path"
+    fi
+  done < "$manifest"
+}
+
+validate_proposal() {
+  local proposal="$1" expected_hash actual_hash patch kind proposal_repository current_repository self_mode="$2" check_targets="${3:-true}" root path
+  [[ -f "$proposal" ]] || die "proposal does not exist: $proposal"
+  case "$(frontmatter_value status "$proposal")" in generated|later) ;; *) die "only generated or later proposals can be acted on" ;; esac
+  proposal_repository="$(frontmatter_value repository "$proposal")"
+  current_repository="$(canonical_path "$(repo_root)")"
+  [[ -n "$proposal_repository" && "$(canonical_path "$proposal_repository")" == "$current_repository" ]] || die "proposal belongs to a different repository"
+  patch="${proposal%.md}.patch"
+  [[ -f "$patch" ]] || die "patch is missing: $patch"
+  expected_hash="$(frontmatter_value patch_sha256 "$proposal")"
+  [[ -n "$expected_hash" ]] || die "proposal has no patch_sha256 metadata"
+  actual_hash="$(sha256sum "$patch" | awk '{print $1}')"
+  [[ "$expected_hash" == "$actual_hash" ]] || die "patch hash does not match the reviewed proposal"
+  kind="$(frontmatter_value kind "$proposal")"
+  if [[ "$self_mode" == true ]]; then
+    [[ "$kind" == self ]] || die "--apply-self requires a self-modification proposal"
+  else
+    [[ "$kind" != self ]] || die "self-modification proposals require --apply-self"
+  fi
+  patch_paths "$patch" >/dev/null || die "patch has no parseable Git diff headers"
+  while IFS= read -r path; do
+    [[ -n "$path" ]] || continue
+    allowed_path "$path" "$kind" || die "patch target is outside the allowed reflection boundary: $path"
+  done < <(patch_paths "$patch")
+  if [[ "$check_targets" == true ]]; then
+    local manifest
+    manifest="$(target_manifest_path "$proposal")"
+    validate_manifest_coverage "$patch" "$manifest"
+    validate_target_manifest "$manifest"
+    root="$(repo_root)"
+    patch="$(canonical_path "$patch")"
+    (cd "$root" && git apply --check --whitespace=error "$patch") || die "git apply --check failed; nothing was changed"
+  fi
+}
+
+show_review() {
+  local proposal="$1"
+  local patch="${proposal%.md}.patch"
+  printf '\n=== Reflection proposal ===\n'
+  cat "$proposal"
+  printf '\n=== Patch ===\n'
+  cat "$patch"
+  local has_deletion=false path
+  if patch_has_deletion "$patch"; then
+    has_deletion=true
+  fi
+  while IFS= read -r path; do
+    [[ -n "$path" ]] || continue
+    if [[ ! -e "$(repo_root)/$path" ]]; then
+      has_deletion=true
+      break
+    fi
+  done < <(patch_paths "$patch")
+  if [[ "$has_deletion" == true ]]; then
+    printf '\nWARNING: this proposal contains file deletions or missing targets.\n'
+  fi
+  printf '\nChoose: 1 Accepted, 2 Rejected, or 3 Later: '
+}
+
+prompt_choice() {
+  local choice
+  read -r choice
+  case "${choice,,}" in
+    1|a|apply|accepted) printf apply ;;
+    2|r|reject|rejected) printf reject ;;
+    3|later|skip) printf later ;;
+    *) printf invalid ;;
+  esac
+}
+
+act_on_proposal() {
+  local proposal="$1" self_mode="$2" requested_action="$3" choice kind risk patch root proposal_repository
+  if [[ "$requested_action" == reject* ]]; then
+    [[ -f "$proposal" ]] || die "proposal does not exist: $proposal"
+    case "$(frontmatter_value status "$proposal")" in generated|later) ;; *) die "only generated or later proposals can be acted on" ;; esac
+    [[ -f "${proposal%.md}.patch" ]] || die "patch is missing: ${proposal%.md}.patch"
+  else
+    validate_proposal "$proposal" "$self_mode"
+  fi
+  kind="$(frontmatter_value kind "$proposal")"
+  if [[ "$requested_action" == reject* ]]; then
+    proposal_repository="$(frontmatter_value repository "$proposal")"
+    [[ -n "$proposal_repository" && "$(canonical_path "$proposal_repository")" == "$(canonical_path "$(repo_root)")" ]] || die "proposal belongs to a different repository"
+  fi
+  if [[ "$self_mode" == true ]]; then
+    [[ "$kind" == self ]] || die "--reject-self requires a self-modification proposal"
+  else
+    [[ "$kind" != self ]] || die "self-modification proposals require --reject-self"
+  fi
+  risk="$(frontmatter_value high_risk "$proposal")"
+  show_review "$proposal"
+  choice="$(prompt_choice)"
+  [[ "$choice" != invalid ]] || die "invalid choice; rerun the command to review again"
+  case "$choice" in
+    later) set_status "$proposal" later; printf 'Proposal deferred for later review: %s\n' "$proposal"; return 0 ;;
+    reject) set_status "$proposal" rejected; printf 'Proposal rejected and retained: %s\n' "$proposal"; return 0 ;;
+    apply) ;;
+  esac
+  if [[ "$risk" == true ]]; then
+    printf 'This proposal contains changes scored 7-10. Type APPLY to continue: '
+    read -r risk_confirmation
+    [[ "$risk_confirmation" == APPLY ]] || { printf 'High-risk confirmation declined; proposal remains generated.\n'; return 0; }
+  fi
+  if [[ "$kind" == new-skill ]]; then
+    printf 'This proposal creates a new skill. Type CREATE-SKILL to continue: '
+    read -r new_skill_confirmation
+    [[ "$new_skill_confirmation" == CREATE-SKILL ]] || { printf 'New-skill confirmation declined; proposal remains generated.\n'; return 0; }
+  fi
+  if [[ "$self_mode" == true ]]; then
+    printf 'This changes /reflect itself. Type APPLY-SELF to continue: '
+    read -r self_confirmation
+    [[ "$self_confirmation" == APPLY-SELF ]] || { printf 'Self-modification confirmation declined; proposal remains generated.\n'; return 0; }
+  fi
+  patch="${proposal%.md}.patch"
+  root="$(repo_root)"
+  validate_proposal "$proposal" "$self_mode"
+  patch="$(canonical_path "$patch")"
+  (cd "$root" && git apply --check --whitespace=error "$patch" && git apply --whitespace=error "$patch") || die "git apply failed; proposal remains generated"
+  set_status "$proposal" applied
+  printf 'Proposal applied to the worktree: %s\n' "$proposal"
+}
+
+finalize() {
+  local proposal="" patch="" kind=normal temp patch_hash manifest repository max_risk high_risk=false
+  while (($#)); do
+    case "$1" in
+      --proposal) proposal="$2"; shift 2 ;;
+      --patch) patch="$2"; shift 2 ;;
+      --kind) kind="$2"; shift 2 ;;
+      *) die "unknown finalize option: $1" ;;
+    esac
+  done
+  [[ -f "$proposal" && -f "$patch" ]] || die "finalize requires an existing proposal and patch"
+  case "$kind" in normal|self|new-skill) ;; *) die "kind must be normal, self, or new-skill" ;; esac
+  patch_hash="$(sha256sum "$patch" | awk '{print $1}')"
+  manifest="$(target_manifest_path "$proposal")"
+  repository="$(repo_root)"
+  max_risk="$(proposal_risk "$proposal")"
+  ((max_risk >= 7)) && high_risk=true
+  patch_paths "$patch" >/dev/null || die "patch has no parseable Git diff headers"
+  create_target_manifest "$patch" "$manifest"
+  temp="$(mktemp)"
+  {
+    printf '%s\n' '---'
+    printf 'status: generated\nkind: %s\nrepository: %s\nmax_risk_score: %s\nhigh_risk: %s\npatch_sha256: %s\ntarget_manifest: %s\n' "$kind" "$repository" "$max_risk" "$high_risk" "$patch_hash" "$(basename "$manifest")"
+    printf '%s\n\n' '---'
+    cat "$proposal"
+  } > "$temp"
+  mv "$temp" "$proposal"
+  printf 'Finalized proposal: %s\nPatch: %s\nManifest: %s\n' "$proposal" "$patch" "$manifest"
+}
+
+resume_run() {
+  local run_dir="$1" session_count completed_batches next_batch run_repository current_repository
+  [[ -f "$run_dir/run.json" ]] || die "run manifest is missing: $run_dir/run.json"
+  [[ ! -f "$run_dir/proposal.md" && ! -f "$run_dir/self-proposal.md" ]] || die "run already has a final proposal and cannot be resumed"
+  jq -e '.status != "complete"' "$run_dir/run.json" >/dev/null || die "run is complete and cannot be resumed"
+  run_repository="$(jq -r '.repository // ""' "$run_dir/run.json")"
+  current_repository="$(canonical_path "$(repo_root)")"
+  [[ -n "$run_repository" && "$(canonical_path "$run_repository")" == "$current_repository" ]] || die "run belongs to a different repository"
+  session_count="$(jq -r '.session_count // 0' "$run_dir/run.json")"
+  completed_batches="$(find "$run_dir" -mindepth 1 -maxdepth 1 -type d -name 'batch_*' -print | wc -l | tr -d ' ')"
+  next_batch=$((completed_batches + 1))
+  printf 'Resuming run from immutable snapshot: %s\n' "$run_dir"
+  printf 'Loaded %s eligible sessions and %s completed batch directories.\n' "$session_count" "$completed_batches"
+  printf 'Continue with batch_%03d using the existing run.json and completed artifacts.\n' "$next_batch"
+  printf 'Do not change scope, configuration, or worker policy.\n'
+}
+
+proposal_risk() {
+  local proposal="$1"
+  awk '
+    /^(max_)?risk_score:[[:space:]]*[0-9]+/ { value=$0; sub(/^[^:]+:[[:space:]]*/, "", value); if (value > highest) highest=value }
+    END { print highest + 0 }
+  ' "$proposal"
+}
+
+review_all() {
+  local root_path="" proposal kind self_mode status choice score sorted_file
+  local -a proposals=() accepted=() rejected=() later=() pending=()
+  while (($#)); do
+    case "$1" in
+      --root) root_path="$2"; shift 2 ;;
+      --help) usage; return ;;
+      *) die "unknown review-all option: $1" ;;
+    esac
+  done
+  [[ -n "$root_path" ]] || die "review-all requires --root PATH"
+  [[ -d "$root_path" ]] || die "review root does not exist: $root_path"
+  sorted_file="$(mktemp)"
+  while IFS= read -r proposal; do
+    status="$(frontmatter_value status "$proposal")"
+    [[ "$status" == generated || "$status" == later ]] || continue
+    score="$(proposal_risk "$proposal")"
+     printf '%010d\t%s\n' "$score" "$proposal" >> "$sorted_file"
+   done < <(find "$root_path" -type f -name '*.md' -print | sort)
+  while IFS=$'\t' read -r score proposal; do
+    [[ -n "$proposal" ]] || continue
+    proposals+=("$proposal")
+  done < <(sort -t $'\t' -k1,1nr -k2,2 "$sorted_file")
+  rm -f "$sorted_file"
+  ((${#proposals[@]})) || { printf 'No generated or later proposals found under %s.\n' "$root_path"; return 0; }
+  for proposal in "${proposals[@]}"; do
+    status="$(frontmatter_value status "$proposal")"
+    [[ "$status" == generated || "$status" == later ]] || continue
+    kind="$(frontmatter_value kind "$proposal")"
+    self_mode=false
+    [[ "$kind" == self ]] && self_mode=true
+    printf '\nReviewing %s\n' "$proposal"
+    if ! (act_on_proposal "$proposal" "$self_mode" "$([[ "$self_mode" == true ]] && printf reject-self || printf reject)"); then
+      printf 'Review could not complete for %s; leaving its current status unchanged.\n' "$proposal" >&2
+    fi
+    status="$(frontmatter_value status "$proposal")"
+    case "$status" in
+      applied) accepted+=("$proposal") ;;
+      rejected) rejected+=("$proposal") ;;
+      later) later+=("$proposal") ;;
+      generated) pending+=("$proposal") ;;
+    esac
+   done
+  printf '\n=== Accepted proposals (applied) ===\n'
+  if ((${#accepted[@]})); then printf '%s\n' "${accepted[@]}"; else printf '(none)\n'; fi
+  printf '\n=== Rejected proposals ===\n'
+  if ((${#rejected[@]})); then printf '%s\n' "${rejected[@]}"; else printf '(none)\n'; fi
+  printf '\n=== Proposals still needing adjustment or review ===\n'
+  if ((${#pending[@]})); then printf '%s\n' "${pending[@]}"; else printf '(none)\n'; fi
+  printf '\n=== Proposals deferred for later ===\n'
+  if ((${#later[@]})); then printf '%s\n' "${later[@]}"; else printf '(none)\n'; fi
+  printf '\nChoose: 1 Continue, 2 Adjust, or 3 Stop: '
+  read -r choice
+  case "${choice,,}" in
+    1|c|continue) printf 'Continuing with the accepted, rejected, and deferred proposal set.\n' ;;
+    2|a|adjust) printf 'Adjust the listed proposals, then rerun review-all.\n'; return 2 ;;
+    3|s|stop|cancel) printf 'Stopped after proposal review.\n'; return 0 ;;
+    *) die "invalid review decision; choose 1 Continue, 2 Adjust, or 3 Stop" ;;
+  esac
+}
+
+main() {
+  local command="${1:-}" config_path="" proposal="" self_mode=false
+  shift || true
+  case "$command" in
+    check)
+      while (($#)); do case "$1" in --config) config_path="$2"; shift 2 ;; --help) usage; return ;; *) die "unknown check option: $1" ;; esac; done
+      load_config "$config_path"; check_dependencies; validate_config; resolve_sources
+      printf 'Dependencies and configuration are valid.\nOpenCode: %s\nClaude: %s\n' "${OPENCODE_DB:-not detected}" "${CLAUDE_DATA:-not detected}"
+      ;;
+    snapshot) snapshot "$@" ;;
+    resume)
+      [[ "${1:-}" == --run-dir && -n "${2:-}" ]] || die "resume requires --run-dir PATH"
+      resume_run "$2"
+      ;;
+    finalize) finalize "$@" ;;
+    review-all) review_all "$@" ;;
+    validate)
+      while (($#)); do case "$1" in --proposal) proposal="$2"; shift 2 ;; --self) self_mode=true; shift ;; *) die "unknown validate option: $1" ;; esac; done
+      validate_proposal "$proposal" "$self_mode"; printf 'Proposal validation passed: %s\n' "$proposal"
+      ;;
+    apply|apply-self|reject|reject-self)
+      while (($#)); do case "$1" in --proposal) proposal="$2"; shift 2 ;; *) die "unknown $command option: $1" ;; esac; done
+      [[ -n "$proposal" ]] || die "$command requires --proposal PATH"
+      [[ "$command" == *-self ]] && self_mode=true
+      act_on_proposal "$proposal" "$self_mode" "$command"
+      ;;
+    --help|-h|"") usage ;;
+    *) die "unknown command: $command" ;;
+  esac
+}
+
+main "$@"

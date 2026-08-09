@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+  printf 'reflect: error: run this command inside the repository being reflected\n' >&2
+  exit 1
+}
+
+exec bash "$repo_root/.opencode/skills/reflect/scripts/reflect" "$@"

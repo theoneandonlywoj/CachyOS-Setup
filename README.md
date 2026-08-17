@@ -79,6 +79,7 @@ Install in this order to satisfy dependencies and get the fastest path to a work
    - `mise.fish`, `elixir_and_erlang.fish`
 6. AI Agent & Terminal Tools
    - `herdr.fish`, `opencode.fish`, `claude-code-cli.fish`
+   - `deepseek_harness.fish`
 7. API & Communication Tools
    - `postman.fish`, `slack.fish`, `webcord.fish`
 8. Networking & Monitoring
@@ -118,6 +119,7 @@ Run category-by-category:
 ./herdr.fish
 ./opencode.fish
 ./claude-code-cli.fish
+./deepseek_harness.fish
 
 # API & Communication Tools
 ./postman.fish
@@ -148,6 +150,7 @@ chmod +x *.fish
 ./htop.fish && ./netcat.fish && ./podman.fish && ./chromium.fish && \
 ./cursor.fish && ./emacs.fish && ./doom_emacs.fish && ./mise.fish && \
 ./herdr.fish && ./opencode.fish && ./claude-code-cli.fish && \
+./deepseek_harness.fish && \
 ./elixir_and_erlang.fish && ./postman.fish && ./slack.fish && \
 ./webcord.fish && ./wireshark.fish && ./wrk.fish && ./cuda.fish && \
 ./dbeaver.fish && ./ollama.fish && ./ngrok.fish && ./vlc.fish && \
@@ -179,6 +182,41 @@ Start a hidden agent manually:
 
 ```sh
 ~/.config/herdr/scripts/start-agent-hidden.fish opencode reviewer ~/project
+```
+
+### DeepSeek Harness
+
+Install DeepSeek Harness from source and expose it as `dsh` in
+`~/.local/bin`:
+
+```sh
+chmod +x deepseek_harness.fish
+./deepseek_harness.fish
+```
+
+Start the Web UI:
+
+```sh
+dsh web
+```
+
+The Web UI is served at `http://127.0.0.1:3080` by default. Configure a
+model in **Settings → Models**, then choose a workspace.
+
+Manage profile plugins from the command line:
+
+```sh
+dsh plugin --profile web add <package-or-git-spec>
+dsh plugin --profile web update
+dsh plugin --profile web remove <package>
+```
+
+The current developer-preview GUI can configure already-loaded plugins and
+show the plugin inventory, but does not install plugins directly. For a local
+development plugin, start the Web UI with a patch overlay:
+
+```sh
+dsh web --patch /absolute/path/to/cordis.yml
 ```
 
 ## ✅ Verification

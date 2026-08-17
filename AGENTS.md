@@ -25,6 +25,7 @@ These workflows run when explicitly selected by the user:
 - `/ask-woj` — route a situation to the best workflow
 - `/ask-matt` — upstream router for the full engineering and productivity set
 - `/grill-with-docs` — sharpen an idea while updating `CONTEXT.md` and ADRs
+- `/reflect` — learn from recent harness conversations and propose guidance changes
 - `/grill-me` — interview a plan without writing repository context
 - `/triage` — move incoming issues through the triage state machine
 - `/setup-matt-pocock-skills` — configure issue tracker and domain-doc conventions

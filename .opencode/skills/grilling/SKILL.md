@@ -10,10 +10,26 @@ Work the tree in **rounds**. The **frontier** is every decision whose prerequisi
 Each question should be formatted like so:
 
 ```
-❓ **Q1** - **<question title>**: <question body, might be multiple paragraphs, including multiple choices>
+❓ **Q1** — **<question title>**: <question body>
 
-➡️ <your recommended answer>
+1. <option>
+2. <option>
+3. <option>
+
+➡️ Recommended: 1. <one-line reason>
 ```
+
+When a decision is genuinely binary, format it as a Yes/No question instead:
+
+```
+❓ **Q2** — **<question title>**: <question body>
+
+➡️ Recommended: Yes. <one-line reason>
+```
+
+Suggest 3–5 options when there is a real choice to make; keep them to one line each. Option lines are plain text — never bold, italic, code, or any other markdown. The only bold in a question is the number and title. Keep the question body and option lines free of stray markup. Use the numbered form for real trade-offs; use the Yes/No form only when the options collapse to one binary split.
+
+Always cite the recommendation by option number (e.g. `Recommended: 2`), never by a letter or by repeating the option's text.
 
 Each round the user answers reshapes the tree — settled decisions push the frontier outward and unblock questions that depended on them. Recompute the frontier and ask the next round. A question whose answer depends on another question still open in this round belongs to a _later_ round, not this one.
 

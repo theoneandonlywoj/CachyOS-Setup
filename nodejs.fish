@@ -1,10 +1,10 @@
 #!/usr/bin/env fish
 # === nodejs.fish ===
-# Purpose: Install Node.js 22+ via Mise on CachyOS (Arch Linux)
+# Purpose: Install Node.js 24+ via Mise on CachyOS (Arch Linux)
 # Author: theoneandonlywoj
 
 # === Version configuration ===
-set NODEJS_VERSION 22
+set NODEJS_VERSION 24
 
 echo "🚀 Starting Node.js setup via Mise..."
 echo "📌 Target version:"
@@ -12,9 +12,12 @@ echo "   Node.js → $NODEJS_VERSION (latest LTS)"
 echo
 
 # === 1. Check Mise installation ===
+# The repository's .tool-versions must not pick the Node: use the global one.
+cd "$HOME"; or exit 1
+
 if not command -v mise > /dev/null
     echo "❌ Mise is not installed. Please install it first using:"
-    echo "   curl https://mise.run | sh"
+    echo "   ./mise.fish"
     echo "Then re-run this script."
     exit 1
 end
@@ -33,10 +36,14 @@ end
 
 # === 4. Install Node.js via Mise ===
 echo "🔧 Installing Node.js $NODEJS_VERSION via Mise..."
-mise install node@$NODEJS_VERSION
 mise use -g node@$NODEJS_VERSION
 if test $status -ne 0
-    echo "❌ Node.js installation failed. Aborting."
+    echo "❌ Node.js installation failed. Rerun: ./nodejs.fish"
+    exit 1
+end
+mise upgrade node
+if test $status -ne 0
+    echo "❌ Node.js update failed; the installed version is untouched. Rerun: ./nodejs.fish"
     exit 1
 end
 

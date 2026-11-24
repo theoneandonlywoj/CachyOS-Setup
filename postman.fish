@@ -6,22 +6,7 @@
 
 echo "🚀 Starting Postman installation..."
 
-# === 1. Check if Postman is already installed ===
-set -l postman_installed (test -f /opt/postman/Postman; and echo "installed")
-if test -n "$postman_installed"
-    echo "ℹ Postman is already installed."
-    read -P "Do you want to reinstall? [y/N] " reinstall
-    if test "$reinstall" != "y" -a "$reinstall" != "Y"
-        echo "ℹ Skipping Postman installation."
-        exit 0
-    end
-    echo "📦 Removing existing Postman installation..."
-    sudo rm -rf /opt/postman
-    sudo rm -f /usr/share/applications/postman.desktop
-    sudo rm -f /usr/local/bin/postman
-end
-
-# === 2. Install dependencies ===
+# === 1. Install dependencies ===
 echo "📦 Installing dependencies..."
 sudo pacman -S --needed --noconfirm curl wget
 if test $status -ne 0
@@ -30,41 +15,56 @@ if test $status -ne 0
 end
 echo "✅ Dependencies installed."
 
-# === 3. Download Postman ===
-set -l POSTMAN_VERSION "10.25.0"
+# === 2. Download Postman ===
 set -l POSTMAN_URL "https://dl.pstmn.io/download/latest/linux64"
-set -l POSTMAN_TAR "postman-linux-x64.tar.gz"
 set -l POSTMAN_DIR "/opt/postman"
 set -l POSTMAN_DESKTOP "/usr/share/applications/postman.desktop"
 
-echo "📥 Downloading Postman $POSTMAN_VERSION..."
-cd /tmp
-if test -f $POSTMAN_TAR
-    rm $POSTMAN_TAR
+# Recover from an interrupted swap: restore the old install, drop stale staging.
+if not test -e $POSTMAN_DIR; and test -e $POSTMAN_DIR.old
+    sudo mv $POSTMAN_DIR.old $POSTMAN_DIR
+    or exit 1
 end
+sudo rm -rf $POSTMAN_DIR.new $POSTMAN_DIR.old
 
-curl -L $POSTMAN_URL -o $POSTMAN_TAR
+set -l tmp (mktemp -d)
+or exit 1
+echo "📥 Downloading the latest Postman..."
+mkdir $tmp/app
+and curl -fL $POSTMAN_URL -o $tmp/postman.tar.gz
 if test $status -ne 0
-    echo "❌ Failed to download Postman."
+    rm -rf $tmp
+    echo "❌ Failed to download Postman; the existing install is untouched. Rerun: ./postman.fish"
     exit 1
 end
 echo "✅ Postman downloaded."
 
-# === 4. Extract and install Postman ===
+# === 3. Extract Postman, then swap it in ===
 echo "📦 Extracting Postman..."
-if test -d $POSTMAN_DIR
-    sudo rm -rf $POSTMAN_DIR
-end
-
-sudo mkdir -p $POSTMAN_DIR
-sudo tar -xzf $POSTMAN_TAR -C $POSTMAN_DIR --strip-components=1
+tar -xzf $tmp/postman.tar.gz -C $tmp/app --strip-components=1
+and test -f $tmp/app/Postman
+and sudo mv $tmp/app $POSTMAN_DIR.new
 if test $status -ne 0
-    echo "❌ Failed to extract Postman."
+    rm -rf $tmp
+    echo "❌ Failed to extract Postman; the existing install is untouched. Rerun: ./postman.fish"
     exit 1
 end
-echo "✅ Postman extracted."
+rm -rf $tmp
 
-# === 5. Create desktop entry ===
+if test -e $POSTMAN_DIR
+    sudo mv $POSTMAN_DIR $POSTMAN_DIR.old
+    or exit 1
+end
+sudo mv $POSTMAN_DIR.new $POSTMAN_DIR
+if test $status -ne 0
+    test -e $POSTMAN_DIR.old; and sudo mv $POSTMAN_DIR.old $POSTMAN_DIR
+    echo "❌ Failed to install Postman. Rerun: ./postman.fish"
+    exit 1
+end
+sudo rm -rf $POSTMAN_DIR.old
+echo "✅ Postman installed."
+
+# === 4. Create desktop entry ===
 echo "🔗 Creating desktop entry..."
 echo "[Desktop Entry]
 Name=Postman
@@ -82,7 +82,7 @@ else
     echo "✅ Desktop entry created."
 end
 
-# === 6. Create symlink for command line access ===
+# === 5. Create symlink for command line access ===
 echo "🔗 Creating command line symlink..."
 sudo ln -sf $POSTMAN_DIR/Postman /usr/local/bin/postman
 if test $status -ne 0
@@ -91,19 +91,14 @@ else
     echo "✅ Command line access created."
 end
 
-# === 7. Set proper permissions ===
+# === 6. Set proper permissions ===
 echo "⚙ Setting permissions..."
 sudo chown -R root:root $POSTMAN_DIR
 sudo chmod +x $POSTMAN_DIR/Postman
 sudo chmod +x /usr/local/bin/postman
 echo "✅ Permissions set."
 
-# === 8. Clean up ===
-echo "🧹 Cleaning up..."
-rm -f $POSTMAN_TAR
-echo "✅ Cleanup complete."
-
-# === 9. Verify installation ===
+# === 7. Verify installation ===
 echo
 echo "🧪 Verifying installation..."
 if test -f $POSTMAN_DIR/Postman

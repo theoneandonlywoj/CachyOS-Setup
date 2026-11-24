@@ -7,7 +7,7 @@ echo "🚀 Starting Keymapp installation/update..."
 
 # === 1. Install dependencies ===
 echo "📦 Installing required dependencies..."
-sudo pacman -S --noconfirm libusb webkit2gtk-4.1 gtk3
+sudo pacman -S --needed --noconfirm libusb webkit2gtk-4.1 gtk3
 if test $status -ne 0
     echo "❌ Failed to install dependencies. Aborting."
     exit 1
@@ -33,14 +33,6 @@ echo "✅ User $USER added to plugdev group"
 # === 4. Create or backup udev rules file ===
 set udev_rules_file /etc/udev/rules.d/50-zsa.rules
 echo "📄 Creating/updating udev rules at $udev_rules_file..."
-
-# Backup existing file if it exists
-if test -f $udev_rules_file
-    set timestamp (date "+%Y_%m_%d_%H_%M_%S")
-    set backup_file /etc/udev/rules.d/50-zsa.rules.backup_$timestamp
-    echo "⚠ Existing udev rules found. Backing up to $backup_file..."
-    sudo cp $udev_rules_file $backup_file
-end
 
 # Create the udev rules file with content
 set udev_content "# Rules for Oryx web flashing and live training
@@ -68,11 +60,20 @@ SUBSYSTEMS==\"usb\", ATTRS{idVendor}==\"0483\", ATTRS{idProduct}==\"df11\", MODE
 # Keymapp Flashing rules for the Voyager
 SUBSYSTEMS==\"usb\", ATTRS{idVendor}==\"3297\", MODE:=\"0666\", SYMLINK+=\"ignition_dfu\""
 
-echo $udev_content | sudo tee $udev_rules_file > /dev/null
-
-if test $status -ne 0
-    echo "❌ Failed to create udev rules. Aborting."
-    exit 1
+if test -f $udev_rules_file; and echo $udev_content | cmp -s - $udev_rules_file
+    echo "✅ udev rules are already current."
+else
+    if test -f $udev_rules_file
+        set backup_file $udev_rules_file.backup_(date "+%Y_%m_%d_%H_%M_%S")
+        echo "⚠ Existing udev rules differ. Backing up to $backup_file..."
+        sudo cp $udev_rules_file $backup_file
+        or exit 1
+    end
+    echo $udev_content | sudo tee $udev_rules_file > /dev/null
+    if test $status -ne 0
+        echo "❌ Failed to create udev rules. Aborting."
+        exit 1
+    end
 end
 
 # === 5. Apply udev rules ===
@@ -86,45 +87,45 @@ mkdir -p $keymapp_dir
 
 # === 7. Download Keymapp ===
 echo "🔽 Downloading latest Keymapp..."
-set keymapp_tar $keymapp_dir/keymapp-latest.tar.gz
+# Stage next to the install, so each replacement below is a rename.
+set staging (mktemp -d $keymapp_dir/.keymapp.XXXXXX)
+or exit 1
+set keymapp_tar $staging/keymapp-latest.tar.gz
 wget -O $keymapp_tar "https://oryx.nyc3.cdn.digitaloceanspaces.com/keymapp/keymapp-latest.tar.gz"
 if test $status -ne 0
-    echo "❌ Failed to download Keymapp. Aborting."
+    rm -rf $staging
+    echo "❌ Failed to download Keymapp; the existing install is untouched. Rerun: ./keymapp.fish"
     exit 1
 end
 
-# === 8. Extract Keymapp ===
+# === 8. Extract Keymapp, then replace the installed files ===
 echo "📦 Extracting Keymapp..."
-cd $keymapp_dir
-tar -xzf $keymapp_tar
+mkdir $staging/new
+and tar -xzf $keymapp_tar -C $staging/new
+and chmod +x $staging/new/keymapp
 if test $status -ne 0
-    echo "❌ Failed to extract Keymapp. Aborting."
+    rm -rf $staging
+    echo "❌ Failed to extract Keymapp; the existing install is untouched. Rerun: ./keymapp.fish"
     exit 1
 end
 
-# === 9. Make Keymapp executable ===
 set keymapp_binary $keymapp_dir/keymapp
-chmod +x $keymapp_binary
-if test $status -ne 0
-    echo "❌ Failed to make Keymapp executable. Aborting."
-    exit 1
+for f in $staging/new/*
+    mv -fT $f $keymapp_dir/(basename $f)
+    if test $status -ne 0
+        rm -rf $staging
+        echo "❌ Failed to install Keymapp. Rerun: ./keymapp.fish"
+        exit 1
+    end
 end
+rm -rf $staging
 
-# Clean up tar file
-rm $keymapp_tar
-
-# === 10. Create symlink for direct access ===
+# === 9. Create symlink for direct access ===
 echo "🔗 Creating symlink for direct access..."
 set local_bin_dir $HOME/.local/bin
 mkdir -p $local_bin_dir
 
-# Remove existing symlink if it exists
-if test -L $local_bin_dir/keymapp
-    rm $local_bin_dir/keymapp
-end
-
-# Create new symlink
-ln -s $keymapp_binary $local_bin_dir/keymapp
+ln -sfn $keymapp_binary $local_bin_dir/keymapp
 if test $status -ne 0
     echo "⚠️ Failed to create symlink. You can still run Keymapp using: $keymapp_binary"
 else

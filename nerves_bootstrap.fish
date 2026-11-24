@@ -21,39 +21,39 @@ if command -v mise > /dev/null
     echo "🔧 Loaded Mise environment"
 end
 
-# === 3. Check and install yay if needed ===
-if not command -v yay > /dev/null
-    echo "📦 yay is not installed. Installing yay from AUR..."
-    
-    # Install base-devel and git if not already installed (required to build yay)
-    sudo pacman -S --needed --noconfirm base-devel git
-    if test $status -ne 0
-        echo "❌ Failed to install base-devel and git. Aborting."
-        exit 1
-    end
-    
-    # Clone and build yay
-    cd /tmp
-    if test -d yay
-        rm -rf yay
-    end
-    git clone https://aur.archlinux.org/yay.git
-    cd yay
-    makepkg -si --noconfirm
-    if test $status -ne 0
-        echo "❌ Failed to install yay. Aborting."
-        exit 1
-    end
-    cd -
-    echo "✅ yay installed successfully"
-else
-    echo "✅ yay is already installed"
+# === 3. Install missing dependencies (never upgrade installed AUR packages) ===
+set required_packages base-devel ncurses5-compat-libs git squashfs-tools curl
+set to_install
+for pkg in $required_packages
+    pacman -Qq $pkg >/dev/null 2>&1; or set -a to_install $pkg
 end
 
-# === 4. Install required dependencies ===
-echo "📦 Installing required dependencies via yay..."
-set required_packages base-devel ncurses5-compat-libs git squashfs-tools curl
-yay -S --needed --noconfirm $required_packages
+if test (count $to_install) -gt 0
+    if not command -q yay
+        if not test -t 0
+            echo "❌ yay is not installed: install yay first"
+            exit 1
+        end
+        echo "📦 yay is not installed. Installing yay from AUR..."
+        sudo pacman -S --needed --noconfirm base-devel git
+        if test $status -ne 0
+            echo "❌ Failed to install base-devel and git. Rerun: ./nerves_bootstrap.fish"
+            exit 1
+        end
+        set build_dir (mktemp -d)
+        git clone https://aur.archlinux.org/yay.git $build_dir/yay
+        and cd $build_dir/yay
+        and makepkg -si --noconfirm
+        if test $status -ne 0
+            echo "❌ Failed to install yay. Rerun: ./nerves_bootstrap.fish"
+            exit 1
+        end
+        cd -
+        rm -rf $build_dir
+    end
+    echo "📦 Installing required dependencies via yay: $to_install"
+    yay -S --needed --noconfirm $to_install
+end
 
 # Verify packages are installed (yay may crash after successful installation)
 set missing_packages
@@ -73,31 +73,31 @@ end
 
 echo "✅ All required dependencies are installed"
 
-# === 5. Install Hex package manager ===
+# === 4. Install Hex package manager ===
 echo "🔧 Installing Hex package manager..."
 mix local.hex --force
 if test $status -ne 0
-    echo "❌ Failed to install Hex. Aborting."
+    echo "❌ Failed to install Hex. Rerun: ./nerves_bootstrap.fish"
     exit 1
 end
 
-# === 6. Install Rebar ===
+# === 5. Install Rebar ===
 echo "🔧 Installing Rebar..."
 mix local.rebar --force
 if test $status -ne 0
-    echo "❌ Failed to install Rebar. Aborting."
+    echo "❌ Failed to install Rebar. Rerun: ./nerves_bootstrap.fish"
     exit 1
 end
 
-# === 7. Install Nerves Bootstrap archive ===
+# === 6. Install Nerves Bootstrap archive ===
 echo "🔧 Installing Nerves Bootstrap archive..."
 mix archive.install hex nerves_bootstrap --force
 if test $status -ne 0
-    echo "❌ Failed to install Nerves Bootstrap. Aborting."
+    echo "❌ Failed to install Nerves Bootstrap. Rerun: ./nerves_bootstrap.fish"
     exit 1
 end
 
-# === 8. Verify installation ===
+# === 7. Verify installation ===
 echo "🧪 Verifying installation..."
 if command -v mix > /dev/null
     # Check if nerves.new command is available (this confirms nerves_bootstrap is installed)

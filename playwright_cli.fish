@@ -4,17 +4,18 @@
 # Author: theoneandonlywoj
 
 # === Version configuration ===
-set NODEJS_VERSION lts
 set PLAYWRIGHT_CLI_PACKAGE @playwright/cli
 set PLAYWRIGHT_CLI_VERSION latest
 
 echo "🚀 Starting Playwright CLI setup via Mise..."
 echo "📌 Target versions:"
-echo "   Node.js        → $NODEJS_VERSION"
 echo "   Playwright CLI → $PLAYWRIGHT_CLI_PACKAGE@$PLAYWRIGHT_CLI_VERSION"
 echo
 
 # === 1. Check Mise installation ===
+# The repository's .tool-versions must not pick the Node: use the global one.
+cd "$HOME"; or exit 1
+
 if not command -v mise > /dev/null
     echo "❌ Mise is not installed. Please install it first using:"
     echo "   ./mise.fish"
@@ -26,21 +27,10 @@ end
 set -x PATH ~/.local/share/mise/shims $PATH
 mise activate fish | source
 
-# === 3. Install Node.js via Mise if needed ===
-echo "📦 Checking for Node.js and npm..."
-if not mise exec -- node --version > /dev/null 2>&1
-    echo "🔧 Installing Node.js $NODEJS_VERSION via Mise..."
-    mise install node@$NODEJS_VERSION
-    if test $status -ne 0
-        echo "❌ Node.js installation failed. Aborting."
-        exit 1
-    end
-
-    mise use -g node@$NODEJS_VERSION
-    if test $status -ne 0
-        echo "❌ Failed to set Node.js as the global Mise version. Aborting."
-        exit 1
-    end
+# === 3. Require Node.js via Mise ===
+if not mise which node >/dev/null 2>&1
+    echo "❌ Node.js via Mise not found. Run ./nodejs.fish first."
+    exit 1
 end
 
 set -x PATH ~/.local/share/mise/shims $PATH
@@ -59,7 +49,7 @@ echo "✅ npm: "(mise exec -- npm --version)
 echo "🔧 Installing Playwright CLI via npm..."
 mise exec -- npm install -g "$PLAYWRIGHT_CLI_PACKAGE@$PLAYWRIGHT_CLI_VERSION"
 if test $status -ne 0
-    echo "❌ Playwright CLI installation failed. Aborting."
+    echo "❌ Playwright CLI installation failed. Rerun: ./playwright_cli.fish"
     exit 1
 end
 
@@ -89,6 +79,18 @@ else
     exit 1
 end
 
+# === 7. Optional Chromium download ===
+if test -t 0
+    read -l -P "Download Chromium for Playwright? [y/N] " install_chromium
+    if test "$install_chromium" = "y" -o "$install_chromium" = "Y"
+        mise exec -- npx playwright install chromium
+        if test $status -ne 0
+            echo "❌ Chromium download failed. Rerun: ./playwright_cli.fish"
+            exit 1
+        end
+    end
+end
+
 echo
 echo "🎉 Playwright CLI setup complete via Mise!"
 echo
@@ -105,3 +107,5 @@ echo "   playwright-cli screenshot"
 echo
 echo "💡 Optional agent skills:"
 echo "   playwright-cli install --skills"
+echo
+echo "📚 Playwright Test guide: docs/guide_playwright_tests.md"

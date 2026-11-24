@@ -5,56 +5,48 @@
 
 echo "🚀 Starting OpenCode CLI installation..."
 
-# === 1. Check if OpenCode CLI is already installed ===
-command -q opencode; and set -l opencode_installed "installed"
-if test -n "$opencode_installed"
-    echo "✅ OpenCode CLI is already installed."
-    read -P "Do you want to reinstall? [y/N] " reinstall
-    if test "$reinstall" != "y" -a "$reinstall" != "Y"
-        echo "⚠ Skipping OpenCode CLI installation."
-        exit 0
-    end
-    echo "📦 Removing existing OpenCode CLI installation..."
-    rm -f "$HOME/.local/bin/opencode"
+# === 1. Install or update OpenCode CLI (official installer, target ~/.opencode/bin) ===
+# Download first, then run: piping curl into bash reports bash's exit status, which is 0 on an empty download.
+# Extra arguments go to the installer: run_installer <url> -y
+function run_installer --argument-names url
+    set -l f (mktemp); or return 1
+    curl -fsSL -o $f $url; and bash $f $argv[2..-1]
+    set -l st $status
+    rm -f $f
+    return $st
+end
+
+if command -q opencode
+    echo "🔄 Updating OpenCode CLI in place..."
+    opencode upgrade; or run_installer https://opencode.ai/install
+else
+    echo "📦 Installing OpenCode CLI..."
+    run_installer https://opencode.ai/install
+end
+if test $status -ne 0
+    echo "❌ OpenCode update failed; the existing install is untouched. Rerun: ./opencode.fish"
+    exit 1
+end
+
+# === 2. Ensure the installer's directory is in PATH ===
+# fish_add_path returns 1 when the directory is already present. Only treat a
+# failed addition as an error when the directory is not already on PATH.
+if test -d "$HOME/.opencode/bin"; and not contains -- "$HOME/.opencode/bin" $PATH
+    fish_add_path -U "$HOME/.opencode/bin"
     if test $status -ne 0
-        echo "❌ Failed to remove OpenCode CLI."
+        echo "❌ Failed to add ~/.opencode/bin to the Fish PATH."
         exit 1
     end
-    echo "✅ OpenCode CLI removed."
 end
 
-# === 2. Ensure ~/.local/bin exists (installer target) ===
-echo "📁 Ensuring install directory exists..."
-mkdir -p "$HOME/.local/bin"
-if test $status -ne 0
-    echo "❌ Failed to create ~/.local/bin."
-    exit 1
-end
-
-# === 3. Install OpenCode CLI (official installer) ===
-echo "📦 Installing OpenCode CLI..."
-curl -fsSL https://opencode.ai/install | bash
-if test $status -ne 0
-    echo "❌ Failed to install OpenCode CLI."
-    exit 1
-end
-echo "✅ OpenCode CLI installed."
-
-# === 4. Reload terminal config to pick up PATH changes ===
-echo "🔄 Reloading terminal configuration..."
-source ~/.config/fish/config.fish
-if test $status -ne 0
-    echo "⚠ Failed to reload config. Please restart your terminal."
-end
-
-# === 5. Verify installation ===
+# === 3. Verify installation ===
 echo
 echo "🧪 Verifying installation..."
 if command -q opencode
-    echo "✅ OpenCode CLI installed successfully."
+    echo "✅ OpenCode CLI installed successfully: "(opencode --version 2>/dev/null)
 else
     echo "❌ OpenCode CLI installation verification failed."
-    echo "💡 Try opening a new terminal or run: set -gx PATH \$HOME/.local/bin \$PATH"
+    echo "💡 Try opening a new terminal or run: set -gx PATH \$HOME/.opencode/bin \$PATH"
     exit 1
 end
 

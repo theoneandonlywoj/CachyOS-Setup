@@ -57,8 +57,8 @@ else if type -q xclip
 else
     echo "⚠️  No clipboard utility found."
     echo "   Install one with:"
-    echo "     sudo pacman -S wl-clipboard    # for Wayland"
-    echo "     sudo pacman -S xclip           # for X11"
+    echo "     sudo pacman -S wl-clipboard    # for Wayland"  # rerun-gate: allow hint text
+    echo "     sudo pacman -S xclip           # for X11"  # rerun-gate: allow hint text
 end
 
 # === 6. Display the key as backup ===

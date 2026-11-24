@@ -12,24 +12,19 @@ echo
 
 set selected_edition "code"
 
-# === 1. Check if VS Code is already installed ===
-if command -v code > /dev/null
-    set existing_version (code --version | head -n 1 2>/dev/null)
-    echo "⚠  VS Code appears to be already installed: $existing_version"
-    read -l -P "Do you want to reinstall/update? (y/N): " response
-    if test "$response" != "y" -a "$response" != "Y"
-        echo "ℹ Installation cancelled."
-        exit 0
-    end
+# === 1. Choose edition ===
+set -l edition_choice
+if test -t 0
+    echo "Select VS Code edition to install:"
+    echo "   1) code (Code - OSS) — open-source, from Arch community repo"
+    echo "   2) visual-studio-code-bin (Official) — Microsoft build, proprietary features, from AUR"
+    read -P "Enter choice [1] or 2: " edition_choice
+else if pacman -Qq visual-studio-code-bin >/dev/null 2>&1
+    # Keep the installed edition. Checked first: this package also provides "code".
+    set edition_choice 2
 end
 
-# === 2. Choose edition ===
-echo "Select VS Code edition to install:"
-echo "   1) code (Code - OSS) — open-source, from Arch community repo"
-echo "   2) visual-studio-code-bin (Official) — Microsoft build, proprietary features, from AUR"
-read -l -P "Enter choice [1] or 2: " edition_choice
-
-switch $edition_choice
+switch "$edition_choice"
     case 2
         set selected_edition "visual-studio-code-bin"
         echo "🔧 Selected: Official Microsoft build (visual-studio-code-bin)"
@@ -37,7 +32,7 @@ switch $edition_choice
         echo "🔧 Selected: Code - OSS (open-source build)"
 end
 
-# === 3. Install VS Code ===
+# === 2. Install VS Code ===
 switch $selected_edition
     case code
         echo "📦 Installing Code - OSS from Arch community repository..."
@@ -59,7 +54,7 @@ switch $selected_edition
                     break
                 end
             end
-            if test -n "$aur_helper"
+            if test -n "$aur_helper"; and not pacman -Qq code-features >/dev/null 2>&1
                 $aur_helper -S --needed --noconfirm code-features
             end
         end
@@ -74,7 +69,9 @@ switch $selected_edition
             end
         end
 
-        if test -z "$aur_helper"
+        if pacman -Qq visual-studio-code-bin >/dev/null 2>&1
+            echo "✅ visual-studio-code-bin is already installed; upgrades come from 'paru -Syu'."
+        else if test -z "$aur_helper"
             echo "❌ No AUR helper found. Please install yay, paru, trizen, or pikaur first."
             echo "   Falling back to Code - OSS from official repos..."
             set selected_edition "code"
@@ -87,13 +84,13 @@ switch $selected_edition
             echo "📦 Installing visual-studio-code-bin from AUR using $aur_helper..."
             $aur_helper -S --needed --noconfirm visual-studio-code-bin
             if test $status -ne 0
-                echo "❌ Failed to install visual-studio-code-bin. Aborting."
+                echo "❌ Failed to install visual-studio-code-bin. Rerun: ./visual_studio_code.fish"
                 exit 1
             end
         end
 end
 
-# === 4. Verify installation ===
+# === 3. Verify installation ===
 echo "🧪 Verifying installation..."
 set code_version (command code --version 2>/dev/null | head -n 1)
 

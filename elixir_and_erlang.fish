@@ -16,7 +16,7 @@ echo
 # === 1. Check Mise installation ===
 if not command -v mise > /dev/null
     echo "❌ Mise is not installed. Please install it first using:"
-    echo "   curl https://mise.run | sh"
+    echo "   ./mise.fish"
     echo "Then re-run this script."
     exit 1
 end
@@ -38,7 +38,7 @@ echo "🔧 Installing Erlang $ERLANG_VERSION via Mise..."
 mise install erlang@$ERLANG_VERSION
 mise use -g erlang@$ERLANG_VERSION 
 if test $status -ne 0
-    echo "❌ Erlang installation failed. Aborting."
+    echo "❌ Erlang installation failed. Rerun: ./elixir_and_erlang.fish"
     exit 1
 end
 
@@ -47,7 +47,7 @@ echo "🔧 Installing Elixir $ELIXIR_VERSION via Mise..."
 mise install elixir@$ELIXIR_VERSION
 mise use -g elixir@$ELIXIR_VERSION
 if test $status -ne 0
-    echo "❌ Elixir installation failed. Aborting."
+    echo "❌ Elixir installation failed. Rerun: ./elixir_and_erlang.fish"
     exit 1
 end
 

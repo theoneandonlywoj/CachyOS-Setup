@@ -1,35 +1,77 @@
 #!/usr/bin/env fish
 # === graphify.fish ===
 # Purpose: Install Graphify (codebase → queryable knowledge graph) on CachyOS (Arch Linux)
-# Includes: uv check, graphifyy[pdf,video,mcp] CLI, OpenCode skill registration
+# Includes: mise or uv owner check, graphifyy[pdf,video,mcp] CLI, OpenCode skill registration
 # Author: theoneandonlywoj
 
 echo "🕸  Starting Graphify setup..."
 
-# === 1. Check uv prerequisite ===
-if not command -v uv > /dev/null
-    echo "❌ uv not found. Graphify is installed via 'uv tool install'."
-    echo "💡 Run ./python_and_uv.fish first, then re-run this script."
+# === 1. Check mise or uv prerequisite ===
+if command -q mise
+    set -x PATH ~/.local/share/mise/shims $PATH
+    mise activate fish | source
+else if not command -q uv
+    echo "❌ mise or uv required."
+    echo "💡 Run ./mise.fish or ./python_and_uv.fish first, then re-run this script."
     exit 1
 end
-echo "✅ uv found: "(uv --version)
 
 # === 2. Ensure ~/.local/bin is in PATH (uv tool bin dir) ===
-if not contains "$HOME/.local/bin" $fish_user_paths
-    set -U fish_user_paths $HOME/.local/bin $fish_user_paths
-    echo "🔧 Added ~/.local/bin to Fish PATH."
-end
-
-# === 3. Install Graphify CLI (package: graphifyy, with extras) ===
-if command -v graphify > /dev/null
-    echo "✅ Graphify CLI is already installed: "(graphify --version 2>/dev/null)
-else
-    echo "📦 Installing Graphify CLI (graphifyy[pdf,video,mcp]) via uv..."
-    uv tool install "graphifyy[pdf,video,mcp]"
+mkdir -p "$HOME/.local/bin"
+# fish_add_path returns 1 when the directory is already present. Only treat a
+# failed addition as an error when the directory is not already on PATH.
+if not contains -- "$HOME/.local/bin" $PATH
+    fish_add_path -U "$HOME/.local/bin"
     if test $status -ne 0
-        echo "❌ Failed to install graphifyy. Aborting."
+        echo "❌ Failed to add ~/.local/bin to the Fish PATH."
         exit 1
     end
+end
+
+# === 3. Install or update Graphify CLI with its existing owner ===
+set -l mise_tool
+set -l uv_owned
+if command -q mise
+    set mise_tool (mise ls --installed 2>/dev/null | string match -r '^pypi:graphifyy\S*')[1]
+end
+if command -q uv
+    set uv_owned (uv tool list 2>/dev/null | string match -r '^graphifyy ')
+end
+
+if test -n "$mise_tool" -a -n "$uv_owned"
+    echo "⚠  Graphify is installed by both mise and uv. Keep one and remove the other:"
+    echo "   mise unuse -g '$mise_tool'"
+    echo "   uv tool uninstall graphifyy"
+end
+
+set -l failed
+if test -n "$mise_tool"
+    echo "🔄 Updating Graphify via mise..."
+    mise upgrade $mise_tool; or set failed yes
+end
+if test -n "$uv_owned"
+    echo "🔄 Updating Graphify via uv..."
+    uv tool upgrade graphifyy; or set failed yes
+end
+if test -z "$mise_tool" -a -z "$uv_owned"
+    echo "📦 Installing Graphify CLI (graphifyy[pdf,video,mcp])..."
+    if command -q mise
+        if not command -q uv; and not command -q pipx
+            echo "❌ A fresh Graphify install through mise needs uv or pipx. Run ./python_and_uv.fish, then rerun: ./graphify.fish"
+            exit 1
+        end
+        # mise reads [...] as tool options, so Python extras go in extras=
+        mise use -g "pypi:graphifyy[extras=pdf,video,mcp]@latest"; or set failed yes
+    else
+        uv tool install "graphifyy[pdf,video,mcp]"; or set failed yes
+    end
+end
+if test -n "$failed"
+    echo "❌ Graphify install/update failed. Rerun: ./graphify.fish"
+    exit 1
+end
+if command -q mise
+    mise reshim
 end
 
 # === 4. Verify installation ===
@@ -38,7 +80,7 @@ if command -v graphify > /dev/null
     echo "✅ graphify available: "(graphify --version 2>/dev/null)
 else
     echo "❌ graphify not found in PATH."
-    echo "💡 Run 'uv tool update-shell' and open a new terminal, then re-run this script."
+    echo "💡 Open a new terminal, then re-run this script."
     exit 1
 end
 
@@ -75,4 +117,5 @@ echo "   python -m graphify.serve graphify-out/graph.json"
 echo
 echo "🧹 Uninstall:"
 echo "   graphify uninstall           → Remove skill from AI assistants"
-echo "   uv tool uninstall graphifyy  → Remove the CLI"
+echo "   mise unuse -g pypi:graphifyy  → Remove the CLI (mise)"
+echo "   uv tool uninstall graphifyy  → Remove the CLI (uv)"

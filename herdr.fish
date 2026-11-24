@@ -40,28 +40,31 @@ if not contains -- "$HOME/.local/bin" $PATH
     end
 end
 
-# === 3. Install Herdr using the official Linux installer ===
-if command -q herdr
-    echo "Herdr is already installed: "(herdr --version 2>/dev/null | head -n 1)
-    read -P "Run the official installer again? [y/N] " reinstall
-    if test "$reinstall" = "y" -o "$reinstall" = "Y"
-        echo "Updating Herdr..."
-        curl -fsSL https://herdr.dev/install.sh | sh
-        if test $status -ne 0
-            echo "Herdr update failed. Aborting."
-            exit 1
-        end
-    else
-        echo "Skipping Herdr binary installation."
-    end
-else
-    echo "Downloading and installing Herdr..."
-    curl -fsSL https://herdr.dev/install.sh | sh
-    if test $status -ne 0
-        echo "Herdr installation failed. Aborting."
-        exit 1
-    end
+# === 3. Install or update Herdr using the official Linux installer ===
+# Download first, then run: piping curl into bash reports bash's exit status, which is 0 on an empty download.
+# Extra arguments go to the installer: run_installer <url> -y
+function run_installer --argument-names url
+    set -l f (mktemp); or return 1
+    curl -fsSL -o $f $url; and bash $f $argv[2..-1]
+    set -l st $status
+    rm -f $f
+    return $st
 end
+
+echo "Installing or updating Herdr..."
+run_installer https://herdr.dev/install.sh
+if test $status -ne 0
+    echo "Herdr install/update failed; an existing install is untouched. Rerun: ./herdr.fish"
+    exit 1
+end
+
+echo "Installing or updating Herdr core (hc)..."
+run_installer https://releases.herdr.dev/core/install.sh
+or echo "⚠️  Herdr core install/update failed. Rerun: ./herdr.fish"
+
+echo "Installing or updating Herdr app (desktop)..."
+run_installer https://releases.herdr.dev/app/install.sh
+or echo "⚠️  Herdr app install/update failed. Rerun: ./herdr.fish"
 
 # Refresh the command lookup after the installer changes ~/.local/bin.
 if not contains -- "$HOME/.local/bin" $PATH
@@ -128,6 +131,13 @@ if not command -q herdr
 end
 echo "Herdr: "(command -v herdr)
 echo "Version: "(herdr --version 2>/dev/null | head -n 1)
+for component in herdr-core herdr-app
+    if command -q $component
+        echo "$component: "(command -v $component)
+    else
+        echo "⚠️  $component: not installed"
+    end
+end
 
 # === 6. Set up integrations for installed coding agents ===
 echo

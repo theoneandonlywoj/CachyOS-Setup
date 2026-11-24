@@ -18,37 +18,19 @@ echo "   - Source checkout: $DSH_SOURCE_DIR"
 echo "   - Launcher: $DSH_LAUNCHER"
 echo
 
-# === 1. Check and install build dependencies ===
-echo "🔍 Checking build dependencies..."
-set -l missing_dependencies
-for dependency in git node npm
-    if not command -q $dependency
-        set missing_dependencies $missing_dependencies $dependency
-    end
-end
-if not command -q corepack; and not command -q pnpm
-    set missing_dependencies $missing_dependencies pnpm
-end
+# === 1. Check Node.js, npm and Git ===
+# The repository's .tool-versions must not pick the Node: use the global one.
+cd "$HOME"; or exit 1
 
-if test (count $missing_dependencies) -gt 0
-    echo "📦 Installing missing dependencies: $missing_dependencies"
-    if not command -q sudo
-        echo "❌ sudo is required to install: $missing_dependencies"
-        exit 1
-    end
-    sudo pacman -S --needed --noconfirm git nodejs npm pnpm
-    if test $status -ne 0
-        echo "❌ Failed to install build dependencies. Aborting."
-        exit 1
-    end
-end
-
-if not command -q git; or not command -q node
-    echo "❌ Git and Node.js are required. Aborting."
+# mise first on PATH, so a leftover pacman /usr/bin/node cannot shadow it.
+set -x PATH ~/.local/share/mise/shims $PATH
+if not command -q mise; or not mise which node >/dev/null 2>&1
+    echo "❌ Node.js via Mise not found. Run ./nodejs.fish first."
     exit 1
 end
+mise activate fish | source
 
-set -l node_version (node --version 2>/dev/null | string trim)
+set -l node_version (mise exec -- node --version 2>/dev/null | string trim)
 set -l node_version_parts (string replace -r '^v' '' -- $node_version | string split '.')
 set -l node_major $node_version_parts[1]
 set -l node_minor $node_version_parts[2]
@@ -58,34 +40,49 @@ if test -z "$node_major"; or not string match -qr '^[0-9]+$' -- $node_major
     exit 1
 end
 
-if test "$node_major" -lt 22; or test "$node_major" -eq 22 -a "$node_minor" -lt 19; or test "$node_major" -eq 23
-    echo "❌ DeepSeek Harness requires Node.js 22.19+ or 24+. Found: $node_version"
-    echo "💡 Update Node.js or select a compatible version with Mise before re-running."
+if test "$node_major" -lt 24; or test "$node_major" -eq 24 -a "$node_minor" -lt 9
+    echo "❌ Node.js 24.9+ required (mise use -g node@24). Found: $node_version"
     exit 1
 end
-
 echo "✅ Node.js version: $node_version"
 
-# Prefer Corepack so pnpm follows the version pinned by DeepSeek Harness.
-set -l pnpm_command
-if command -q corepack
-    corepack enable >/dev/null 2>&1
-    set pnpm_command corepack pnpm
-else if command -q pnpm
-    set pnpm_command pnpm
-else
-    echo "❌ Corepack or pnpm is required to install DeepSeek Harness."
-    echo "💡 Install Corepack with Node.js or install pnpm, then re-run this script."
+if not command -q git
+    echo "📦 Installing git..."
+    sudo pacman -S --needed --noconfirm git
+    if test $status -ne 0
+        echo "❌ Failed to install git. Rerun: ./deepseek_harness.fish"
+        exit 1
+    end
+end
+set -l git_version (git --version | string match -r '[0-9]+\.[0-9]+' | string split '.')
+if test (count $git_version) -ne 2; or test "$git_version[1]" -lt 2; or test "$git_version[1]" -eq 2 -a "$git_version[2]" -lt 26
+    echo "❌ Git 2.26+ is required. Found: "(git --version)
     exit 1
 end
-
-set -l pnpm_version ($pnpm_command --version 2>/dev/null)
-if test $status -ne 0 -o -z "$pnpm_version"
-    echo "❌ Could not run pnpm through the selected package manager."
-    exit 1
-end
-echo "✅ pnpm version: $pnpm_version"
+echo "✅ "(git --version)
 echo
+
+# Reads package.json on stdin; fails when this Node does not satisfy engines.node.
+function check_engines
+    mise exec -- node -e '
+        const path = require("node:path")
+        let range, ok
+        try {
+            const semver = require(path.join(path.dirname(process.execPath), "../lib/node_modules/npm/node_modules/semver"))
+            const pkg = JSON.parse(require("node:fs").readFileSync(0, "utf8"))
+            if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) throw new Error("not a JSON object")
+            range = pkg.engines?.node
+            ok = !range || semver.satisfies(process.version, range)
+        } catch (e) {
+            console.error("❌ Could not read the upstream engines.node (network or parse failure): " + e.message)
+            process.exit(2)
+        }
+        if (!ok) {
+            console.error("❌ DeepSeek Harness needs Node.js " + range + ". Found: " + process.version + ". Run ./nodejs.fish")
+            process.exit(1)
+        }
+    '
+end
 
 # === 2. Check an existing source installation ===
 set -l existing_checkout false
@@ -102,10 +99,27 @@ if test -d "$DSH_SOURCE_DIR/.git"
         exit 1
     end
 
+    set -l checkout_changes (git -C "$DSH_SOURCE_DIR" status --short 2>&1)
+    if test $status -ne 0; or test (count $checkout_changes) -gt 0
+        echo "❌ The source checkout has local changes; it was not touched:"
+        echo "   git -C $DSH_SOURCE_DIR status --short"
+        printf '   %s\n' $checkout_changes
+        echo "💡 Commit or discard them, then rerun: ./deepseek_harness.fish"
+        exit 1
+    end
+
     echo "🔍 Fetching the latest upstream version information..."
     git -C "$DSH_SOURCE_DIR" fetch --tags origin $DSH_BRANCH
     if test $status -ne 0
-        echo "❌ Failed to fetch upstream changes. Aborting without modifying the checkout."
+        echo "❌ Failed to fetch upstream changes. The checkout is unchanged. Rerun: ./deepseek_harness.fish"
+        exit 1
+    end
+
+    set -l fetched (git -C "$DSH_SOURCE_DIR" rev-parse FETCH_HEAD)
+    or begin; echo "❌ Could not resolve the fetched commit. The checkout is unchanged. Rerun: ./deepseek_harness.fish"; exit 1; end
+    git -C "$DSH_SOURCE_DIR" show "$fetched:package.json" | check_engines
+    if test $status -ne 0
+        echo "💡 The checkout is unchanged. Rerun: ./deepseek_harness.fish"
         exit 1
     end
 
@@ -131,28 +145,12 @@ if test -d "$DSH_SOURCE_DIR/.git"
         echo "   Result: upstream changes are available"
     end
 
-    set -l checkout_changes (git -C "$DSH_SOURCE_DIR" status --porcelain 2>/dev/null | string collect)
-    if test -n "$checkout_changes"
-        echo "⚠ Local changes were found in the source checkout."
-        echo "💡 The script will not overwrite them or reset the repository."
-    end
-
-    read -l -P "Do you want to update/reinstall DeepSeek Harness and rebuild it? [y/N] " reinstall
-    if test "$reinstall" != "y" -a "$reinstall" != "Y"
-        echo "⚠ Skipping DeepSeek Harness installation."
-        exit 0
-    end
-
-    if test -z "$checkout_changes"
-        echo "🔄 Updating the source checkout..."
-        git -C "$DSH_SOURCE_DIR" merge --ff-only "origin/$DSH_BRANCH"
-        if test $status -ne 0
-            echo "❌ Could not update the checkout with a fast-forward merge."
-            echo "💡 Resolve the repository state manually, then re-run this script."
-            exit 1
-        end
-    else
-        echo "ℹ Keeping the checkout at its current commit because it has local changes."
+    echo "🔄 Updating the source checkout..."
+    git -C "$DSH_SOURCE_DIR" merge --ff-only $fetched
+    if test $status -ne 0
+        echo "❌ Could not fast-forward the checkout."
+        echo "💡 Resolve the repository state manually, then rerun: ./deepseek_harness.fish"
+        exit 1
     end
 else if test -e "$DSH_SOURCE_DIR"
     echo "❌ The install path exists but is not a Git checkout: $DSH_SOURCE_DIR"
@@ -162,11 +160,16 @@ end
 
 # === 3. Clone the source repository when needed ===
 if not $existing_checkout
+    curl -fsSL https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/$DSH_BRANCH/package.json | check_engines
+    if test $status -ne 0
+        echo "💡 Nothing was cloned. Rerun: ./deepseek_harness.fish"
+        exit 1
+    end
     echo "📥 Cloning DeepSeek Harness from source..."
     mkdir -p (path dirname "$DSH_SOURCE_DIR")
     git clone --branch $DSH_BRANCH --single-branch "$DSH_REPO_URL" "$DSH_SOURCE_DIR"
     if test $status -ne 0
-        echo "❌ Failed to clone DeepSeek Harness. Aborting."
+        echo "❌ Failed to clone DeepSeek Harness. Rerun: ./deepseek_harness.fish"
         exit 1
     end
 end
@@ -178,16 +181,49 @@ if test $status -ne 0
     echo "❌ Failed to enter the DeepSeek Harness source checkout."
     exit 1
 end
+
+# Use the pnpm version pinned by DeepSeek Harness.
+set -l pnpm_required (node -e '
+    const pm = JSON.parse(require("node:fs").readFileSync("package.json", "utf8")).packageManager
+    if (typeof pm !== "string" || !pm.startsWith("pnpm@")) process.exit(1)
+    process.stdout.write(pm.slice("pnpm@".length).split("+")[0])
+')
+if test -z "$pnpm_required"
+    echo "❌ Could not determine the required pnpm version from package.json."
+    exit 1
+end
+
+set -l pnpm_command
+if mise exec -- corepack prepare "pnpm@$pnpm_required" --activate
+    set pnpm_command mise exec -- corepack pnpm
+else
+    echo "⚠ Corepack unavailable; installing pnpm@$pnpm_required via npm..."
+    mise exec -- npm install -g "pnpm@$pnpm_required"
+    if test $status -ne 0
+        echo "❌ Failed to install pnpm $pnpm_required. Rerun: ./deepseek_harness.fish. If a corepack pnpm link is in the way, run: mise exec -- corepack disable pnpm"
+        exit 1
+    end
+    set pnpm_command mise exec -- pnpm
+end
+mise reshim
+
+set -l pnpm_version ($pnpm_command --version 2>/dev/null)
+if test "$pnpm_version" != "$pnpm_required"
+    echo "❌ pnpm $pnpm_required is required, but found: $pnpm_version"
+    exit 1
+end
+echo "✅ pnpm version: $pnpm_version"
+
 $pnpm_command install
 if test $status -ne 0
-    echo "❌ Dependency installation failed."
+    echo "❌ Dependency installation failed. Rerun: ./deepseek_harness.fish"
     exit 1
 end
 
 echo "🔨 Building DeepSeek Harness..."
 $pnpm_command run build
 if test $status -ne 0
-    echo "❌ DeepSeek Harness build failed."
+    echo "❌ DeepSeek Harness build failed. Rerun: ./deepseek_harness.fish"
     exit 1
 end
 
@@ -201,11 +237,7 @@ end
 
 begin
     printf '%s\n' '#!/usr/bin/env sh' 'DSH_SOURCE_DIR="${DSH_SOURCE_DIR:-$HOME/.local/share/deepseek-harness}"' 'if [ ! -d "$DSH_SOURCE_DIR" ]; then' '    printf "%s\\n" "DeepSeek Harness source checkout not found: $DSH_SOURCE_DIR" >&2' '    exit 1' 'fi' 'cd "$DSH_SOURCE_DIR" || exit 1'
-    if test (count $pnpm_command) -eq 2
-        printf '%s\n' 'exec corepack pnpm dsh "$@"'
-    else
-        printf '%s\n' 'exec pnpm dsh "$@"'
-    end
+    printf 'exec %s dsh "$@"\n' "$pnpm_command"
 end > "$DSH_LAUNCHER"
 chmod +x "$DSH_LAUNCHER"
 if test $status -ne 0
@@ -214,11 +246,15 @@ if test $status -ne 0
 end
 
 # === 6. Add the launcher directory to Fish PATH ===
-if not contains "$DSH_BIN_DIR" $fish_user_paths
-    set -U fish_user_paths "$DSH_BIN_DIR" $fish_user_paths
-    echo "➕ Added $DSH_BIN_DIR to the Fish PATH."
+# fish_add_path returns 1 when the directory is already present. Only treat a
+# failed addition as an error when the directory is not already on PATH.
+if not contains -- "$DSH_BIN_DIR" $PATH
+    fish_add_path -U "$DSH_BIN_DIR"
+    if test $status -ne 0
+        echo "❌ Failed to add $DSH_BIN_DIR to the Fish PATH."
+        exit 1
+    end
 end
-set -gx PATH "$DSH_BIN_DIR" $PATH
 
 # === 7. Verify the installation ===
 echo

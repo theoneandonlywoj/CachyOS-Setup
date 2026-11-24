@@ -16,37 +16,35 @@ if not command -v curl > /dev/null
     end
 end
 
-# === 2. Check if Zed is already installed ===
-if command -v zed > /dev/null
-    set existing_version (zed --version 2>/dev/null)
-    echo "⚠️  Zed appears to be already installed: $existing_version"
-    echo "   Do you want to reinstall/update? (y/N)"
-    read -l response
-    if test "$response" != "y" -a "$response" != "Y"
-        echo "ℹ️  Installation cancelled."
-        exit 0
-    end
-end
-
-# === 3. Install Zed via official installation script ===
+# === 2. Install Zed via official installation script ===
 echo "🔧 Installing Zed editor via official installation script..."
 echo "   This will download and run the official Zed installer from zed.dev"
 echo
 
-curl -f https://zed.dev/install.sh | sh
+# Download first, then run: piping curl into bash reports bash's exit status, which is 0 on an empty download.
+# Extra arguments go to the installer: run_installer <url> -y
+function run_installer --argument-names url
+    set -l f (mktemp); or return 1
+    curl -fsSL -o $f $url; and bash $f $argv[2..-1]
+    set -l st $status
+    rm -f $f
+    return $st
+end
+
+run_installer https://zed.dev/install.sh
 if test $status -ne 0
-    echo "❌ Zed installation failed. Aborting."
+    echo "❌ Zed install/update failed. Rerun: ./zed.fish"
     exit 1
 end
 
-# === 4. Add Zed to PATH if not already present ===
+# === 3. Add Zed to PATH if not already present ===
 set zed_bin_path ~/.local/bin
 if not string match -q "*$zed_bin_path*" $PATH
     echo "🔧 Adding Zed to PATH in current session..."
     set -x PATH $zed_bin_path $PATH
 end
 
-# === 5. Add PATH update to Fish config if not already present ===
+# === 4. Add PATH update to Fish config if not already present ===
 set fish_config_file ~/.config/fish/config.fish
 set path_line "set -x PATH ~/.local/bin \$PATH"
 
@@ -55,7 +53,7 @@ if not grep -Fxq "$path_line" $fish_config_file
     echo "🔧 Added Zed binary path to $fish_config_file"
 end
 
-# === 6. Verify installation ===
+# === 5. Verify installation ===
 echo "🧪 Verifying installation..."
 # Reload PATH to ensure zed is available
 set -x PATH ~/.local/bin $PATH

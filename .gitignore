@@ -8,3 +8,6 @@ mise.toml
 .env
 .env.*
 !.env.example
+
+# Herdr config backups from make herdr-global-*
+.herdr-*/

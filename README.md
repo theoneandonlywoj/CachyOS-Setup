@@ -77,18 +77,22 @@ The **Rerun** column says what a second run does:
 <!-- root-command-catalog -->
 | Command | Installs via | Rerun | Notes |
 |---|---|---|---|
+| `./1password.fish` | AUR | skip | 1Password |
 | `./act.fish` | pacman | skip | act (GitHub Actions runner) installation and setup |
 | `./ansible.fish` | pacman | legacy | Ansible (automation platform) |
 | `./antigravity.fish` | AUR | legacy | Google Antigravity IDE |
 | `./atuin.fish` | pacman | skip | Atuin (searchable shell history) with Fish integration |
 | `./audacity.fish` | pacman | legacy | Audacity audio editor |
+| `./auto_ontology.fish` | git + podman compose | update | NVIDIA Auto Ontology (local compose stack) |
 | `./aws_cli.fish` | pacman | legacy | AWS CLI |
 | `./bend.fish` | vendor installer | update | Bend language |
 | `./blender.fish` | pacman | legacy | Blender 3D creation suite |
+| `./browse.fish` | vendor installer | update | browse (browser control for coding agents) |
 | `./btop.fish` | pacman | skip | btop resource monitor |
 | `./caddy.fish` | pacman / AUR | legacy | Caddy (web server with automatic HTTPS) |
 | `./chromium.fish` | pacman | legacy | Chromium browser |
 | `./claude-code-cli.fish` | vendor installer | update | Claude Code CLI |
+| `./codex.fish` | vendor installer | update | OpenAI Codex CLI |
 | `./comfyui.fish` | git + Podman | legacy | ComfyUI with Podman |
 | `./container_tui.fish` | pacman | skip | Container TUIs (lazydocker and ctop) |
 | `./copyq.fish` | pacman | legacy | CopyQ (clipboard manager with history) |
@@ -97,6 +101,7 @@ The **Rerun** column says what a second run does:
 | `./cursor.fish` | AppImage download | legacy | Cursor AI (install or update) |
 | `./darktable.fish` | pacman | legacy | darktable (RAW photo workflow) |
 | `./dbeaver.fish` | pacman | legacy | DBeaver database tool |
+| `./deepeval.fish` | uv | update | DeepEval CLI (LLM output testing) |
 | `./deepseek_harness.fish` | git + pnpm | update | DeepSeek Harness (dsh) from source |
 | `./dexter.fish` | mise (aqua) | update | Dexter (Elixir LSP) |
 | `./dialyxir.fish` | instructions only | guide | Dialyxir (Dialyzer wrapper) project setup |
@@ -107,12 +112,14 @@ The **Rerun** column says what a second run does:
 | `./elixirls.fish` | GitHub release | legacy | ElixirLS LSP server for Elixir from GitHub releases |
 | `./emacs.fish` | pacman / AUR | legacy | Emacs 30 |
 | `./epub_reader.fish` | pacman | legacy | Free epub reader |
+| `./executor.fish` | npm via mise | update | Executor (MCP gateway for coding agents) |
 | `./exiftool.fish` | pacman | legacy | ExifTool |
 | `./expert_elixir_lsp.fish` | GitHub release | legacy | Elixir's Expert LSP server from GitHub releases |
 | `./ffmpeg.fish` | pacman | legacy | FFmpeg multimedia framework |
 | `./filezilla.fish` | pacman | legacy | FileZilla (FTP client) |
 | `./fwup.fish` | source build | update | fwup (firmware update tool) from source |
 | `./fzf.fish` | pacman | skip | fzf (fuzzy finder) with Fish integration |
+| `./ghostty.fish` | pacman | skip | Ghostty terminal emulator |
 | `./gimp.fish` | pacman | legacy | GIMP image editor |
 | `./git_setup.fish` | config only (SSH key, git config) | setup | Git identity and SSH key setup |
 | `./github_cli.fish` | pacman | update | GitHub CLI (gh) |
@@ -121,10 +128,13 @@ The **Rerun** column says what a second run does:
 | `./gmic.fish` | pacman | legacy | G'MIC (GREYC's Magic Image Converter) |
 | `./godclaude-setup.fish` | mise + npx | legacy | Require Mise and Claude Code, ensure npx/gsd, add godclaude alias |
 | `./godot.fish` | pacman | skip | Godot game engine |
+| `./google_chrome.fish` | AUR | skip | Google Chrome |
 | `./google_cloud_sdk.fish` | pacman / AUR | legacy | Google Cloud SDK (install or update) |
 | `./gping.fish` | pacman | legacy | gping (ping with graph visualization) |
 | `./graphify.fish` | mise / uv | update | Graphify (codebase → queryable knowledge graph) |
 | `./graphviz.fish` | pacman | legacy | Graphviz graph visualization tool |
+| `./handy.fish` | AUR | skip | Handy (offline speech-to-text) |
+| `./harness2.fish` | git + uv | update | Harness2 (recursive agent harness) |
 | `./helm.fish` | pacman / AUR / mise | legacy | Helm (Kubernetes package manager) |
 | `./herdr.fish` | vendor installer | update | Herdr and configure it for Fish |
 | `./hermes_agent.fish` | vendor installer | update | Hermes Agent via official install script |
@@ -159,15 +169,19 @@ The **Rerun** column says what a second run does:
 | `./obs_studio.fish` | pacman | legacy | OBS Studio |
 | `./observer_cli.fish` | instructions only | guide | observer_cli (terminal BEAM observer) project setup |
 | `./ollama.fish` | vendor installer | legacy | Clean install or update of Ollama |
+| `./omniroute.fish` | npm via mise | update | OmniRoute (self-hosted AI gateway) |
 | `./opencode.fish` | vendor installer | update | OpenCode CLI |
 | `./openshot.fish` | pacman | legacy | OpenShot video editor |
+| `./orca.fish` | AUR | skip | Stably Orca (agentic coding IDE) |
 | `./pandoc.fish` | pacman | legacy | Pandoc (universal document converter) |
 | `./pdf_support.fish` | pacman | legacy | Xournal++ installation with full PDF annotation support |
+| `./pi_agent.fish` | npm via mise | update | Pi coding agent |
 | `./plantuml.fish` | pacman | legacy | PlantUML diagramming tool |
 | `./playwright_cli.fish` | npm via mise | update | Playwright CLI for coding agents via npm and Mise |
 | `./podman.fish` | pacman | skip | Podman, Docker Compose, and Docker CLI alias |
 | `./podman_compose.fish` | pacman / pip | skip | podman-compose (docker-compose alternative for Podman) |
 | `./postman.fish` | vendor tarball | update | Postman API client |
+| `./prime_agent.fish` | vendor installer | update | Prime Agent (Prime Intellect) |
 | `./python_and_uv.fish` | vendor installer (uv) | legacy | uv and Python 3.11+ |
 | `./qbittorrent.fish` | pacman | legacy | qBittorrent torrent client |
 | `./rclone.fish` | pacman | legacy | rclone (cloud storage sync tool) |
@@ -176,6 +190,7 @@ The **Rerun** column says what a second run does:
 | `./ripgrep.fish` | pacman | legacy | ripgrep (fast text search tool) |
 | `./rust.fish` | mise | update | Rust (rustc and cargo) |
 | `./slack.fish` | AUR | skip | Slack from AUR |
+| `./spotify.fish` | pacman | skip | Spotify (spotify-launcher) |
 | `./squashfs.fish` | pacman | legacy | squashfs-tools |
 | `./step_cli.fish` | pacman | skip | step-cli (certificate and PKI toolkit) |
 | `./stern.fish` | pacman / AUR / mise | legacy | Stern (Kubernetes log tailing tool) |
@@ -184,6 +199,7 @@ The **Rerun** column says what a second run does:
 | `./terraform.fish` | pacman | legacy | Terraform (IaC) tool |
 | `./tidewave.fish` | GitHub release | legacy | Tidewave CLI (coding agent for full-stack web development) |
 | `./tmux.fish` | pacman | legacy | tmux terminal multiplexer |
+| `./toktrack.fish` | cargo via mise | update | toktrack (AI coding token and cost tracker) |
 | `./vault.fish` | pacman / AUR / mise | legacy | Vault (HashiCorp secrets management) |
 | `./ventoy.fish` | pacman / AUR | legacy | Ventoy |
 | `./visual_studio_code.fish` | pacman / AUR | skip | Visual Studio Code |

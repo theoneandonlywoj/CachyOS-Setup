@@ -98,7 +98,6 @@ The **Rerun** column says what a second run does:
 | `./copyq.fish` | pacman | legacy | CopyQ (clipboard manager with history) |
 | `./credo.fish` | instructions only | guide | Credo (Elixir linter) project setup |
 | `./cuda_11_8.fish` | pacman | legacy | CUDA toolkit 11.8.0 |
-| `./cursor.fish` | AppImage download | legacy | Cursor AI (install or update) |
 | `./darktable.fish` | pacman | legacy | darktable (RAW photo workflow) |
 | `./dbeaver.fish` | pacman | legacy | DBeaver database tool |
 | `./deepeval.fish` | uv | update | DeepEval CLI (LLM output testing) |
@@ -153,7 +152,6 @@ The **Rerun** column says what a second run does:
 | `./livediff.fish` | cargo via mise | update | Livediff (live terminal diff TUI) |
 | `./llmfit.fish` | vendor installer | legacy | LLMFit (hardware-aware LLM model finder) |
 | `./lynx.fish` | vendor installer (elan) | update | Lynx (Lean proofs for Erlang/Elixir) |
-| `./mcp_servers.fish` | npm via mise | legacy | MCP servers for Cursor AI |
 | `./mdbook.fish` | pacman / cargo | legacy | mdbook (create books with Markdown) |
 | `./mise.fish` | vendor installer | update | Mise (environment/version manager) |
 | `./mkcert.fish` | pacman | legacy | mkcert (local SSL certificates) |
@@ -223,7 +221,7 @@ The **Rerun** column says what a second run does:
 Run a single script explicitly with Fish (if needed):
 
 ```sh
-fish ./cursor.fish
+fish ./nodejs.fish
 ```
 
 ### Herdr

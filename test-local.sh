@@ -22,7 +22,7 @@ failed_count=0
 total_count=0
 
 # Must equal the number of `legacy` rows in the README catalog; it may only go down.
-LEGACY_MAX=77
+LEGACY_MAX=73
 
 # README command catalog (Steps 3-6 read each script's rerun tag from it)
 catalog=$(sed -n '/^<!-- root-command-catalog -->$/,/^<!-- \/root-command-catalog -->$/p' README.md)

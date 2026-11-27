@@ -1,9 +1,8 @@
-# === Makefile for Doom Emacs, Cursor, Tmux & opencode config sync ===
+# === Makefile for Doom Emacs, Tmux & opencode config sync ===
 # Moves existing configs to timestamped backups and installs new configs
 # Supports restore from the most recent backup
 
 .PHONY: all sync backup restore soft-test help \
-        cursor-sync cursor-backup cursor-restore cursor-diff \
         doom-sync doom-backup doom-restore \
         tmux-sync tmux-backup tmux-restore tmux-diff \
         openclaw-sync openclaw-backup openclaw-restore \
@@ -19,11 +18,6 @@ TIMESTAMP := $(shell date +"%Y_%m_%d_%H_%M")
 
 # Doom Emacs paths
 DOOM_BACKUP_DIR := $(HOME)/.doom.d_backup_$(TIMESTAMP)
-
-# Cursor paths (Linux)
-CURSOR_CONFIG_DIR := $(HOME)/.config/Cursor/User
-CURSOR_BACKUP_DIR := $(HOME)/.config/Cursor/User_backup_$(TIMESTAMP)
-CURSOR_REPO_DIR := ./.config/Cursor/User
 
 # Tmux paths
 TMUX_CONFIG := $(HOME)/.tmux.conf
@@ -58,67 +52,8 @@ HERDR_HOME_CONFIG := $(HERDR_HOME_DIR)/config.toml
 # DEFAULT TARGET
 # ============================================================
 
-all: doom-sync cursor-sync opencode-sync herdr-global-set
+all: doom-sync opencode-sync herdr-global-set
 	@echo "✅ All configurations synced!"
-
-# ============================================================
-# CURSOR IDE CONFIGURATION
-# ============================================================
-
-cursor-sync: cursor-backup
-	@echo "📦 Copying Cursor configuration..."
-	@mkdir -p "$(CURSOR_CONFIG_DIR)"
-	@cp "$(CURSOR_REPO_DIR)/settings.json" "$(CURSOR_CONFIG_DIR)/settings.json"
-	@cp "$(CURSOR_REPO_DIR)/keybindings.json" "$(CURSOR_CONFIG_DIR)/keybindings.json"
-	@echo "✅ Cursor configuration synced to $(CURSOR_CONFIG_DIR)"
-	@# Configure KDE Plasma keyboard: disable 3rd level key (AltGr) so Ctrl+Alt shortcuts work
-	@if [ "$$XDG_CURRENT_DESKTOP" = "KDE" ] && command -v kwriteconfig6 >/dev/null 2>&1; then \
-		echo "⌨️  Configuring KDE Plasma keyboard (disabling AltGr as 3rd level key)..."; \
-		kwriteconfig6 --file kxkbrc --group Layout --key Options "lv3:ralt_alt"; \
-		echo "✅ KDE keyboard configured: Right Alt now works as regular Alt"; \
-		echo "💡 Log out and back in (or run 'setxkbmap -option lv3:ralt_alt') to apply"; \
-	fi
-	@echo "💡 Restart Cursor to apply changes"
-
-cursor-backup:
-	@if [ -f "$(CURSOR_CONFIG_DIR)/settings.json" ] || [ -f "$(CURSOR_CONFIG_DIR)/keybindings.json" ]; then \
-		echo "💾 Backing up existing Cursor config to $(CURSOR_BACKUP_DIR)..."; \
-		mkdir -p "$(CURSOR_BACKUP_DIR)"; \
-		if [ -f "$(CURSOR_CONFIG_DIR)/settings.json" ]; then \
-			cp "$(CURSOR_CONFIG_DIR)/settings.json" "$(CURSOR_BACKUP_DIR)/settings.json"; \
-		fi; \
-		if [ -f "$(CURSOR_CONFIG_DIR)/keybindings.json" ]; then \
-			cp "$(CURSOR_CONFIG_DIR)/keybindings.json" "$(CURSOR_BACKUP_DIR)/keybindings.json"; \
-		fi; \
-		echo "✅ Backup created at $(CURSOR_BACKUP_DIR)"; \
-	else \
-		echo "ℹ️ No existing Cursor config found — skipping backup."; \
-	fi
-
-cursor-restore:
-	@echo "♻️  Restoring the most recent Cursor backup..."
-	@latest_backup=$$(ls -d $(HOME)/.config/Cursor/User_backup_* 2>/dev/null | sort -r | head -n 1); \
-	if [ -z "$$latest_backup" ]; then \
-		echo "❌ No Cursor backups found. Cannot restore."; \
-		exit 1; \
-	fi; \
-	echo "♻️  Restoring from $$latest_backup..."; \
-	if [ -f "$$latest_backup/settings.json" ]; then \
-		cp "$$latest_backup/settings.json" "$(CURSOR_CONFIG_DIR)/settings.json"; \
-	fi; \
-	if [ -f "$$latest_backup/keybindings.json" ]; then \
-		cp "$$latest_backup/keybindings.json" "$(CURSOR_CONFIG_DIR)/keybindings.json"; \
-	fi; \
-	echo "✅ Cursor restore complete from $$latest_backup"; \
-	echo "💡 Restart Cursor to apply changes"
-
-cursor-diff:
-	@echo "📊 Comparing Cursor configurations..."
-	@echo "=== settings.json ==="
-	@diff -u "$(CURSOR_CONFIG_DIR)/settings.json" "$(CURSOR_REPO_DIR)/settings.json" 2>/dev/null || echo "(files differ or missing)"
-	@echo
-	@echo "=== keybindings.json ==="
-	@diff -u "$(CURSOR_CONFIG_DIR)/keybindings.json" "$(CURSOR_REPO_DIR)/keybindings.json" 2>/dev/null || echo "(files differ or missing)"
 
 # ============================================================
 # DOOM EMACS CONFIGURATION
@@ -568,12 +503,12 @@ herdr-remove-backups:
 # CONVENIENCE ALIASES
 # ============================================================
 
-sync: doom-sync cursor-sync tmux-sync openclaw-sync opencode-sync herdr-global-set
+sync: doom-sync tmux-sync openclaw-sync opencode-sync herdr-global-set
 	@echo "✅ All configurations synced!"
 
-backup: doom-backup cursor-backup tmux-backup openclaw-backup opencode-backup herdr-global-backup
+backup: doom-backup tmux-backup openclaw-backup opencode-backup herdr-global-backup
 
-restore: doom-restore cursor-restore tmux-restore openclaw-restore opencode-restore herdr-global-restore
+restore: doom-restore tmux-restore openclaw-restore opencode-restore herdr-global-restore
 
 # ============================================================
 # TESTING
@@ -591,13 +526,7 @@ help:
 	@echo "=================================="
 	@echo
 	@echo "ALL:"
-	@echo "  make all              Sync Doom Emacs, Cursor, and opencode configs"
-	@echo
-	@echo "CURSOR IDE:"
-	@echo "  make cursor-sync      Backup and sync Cursor settings/keybindings"
-	@echo "  make cursor-backup    Backup current Cursor config"
-	@echo "  make cursor-restore   Restore most recent Cursor backup"
-	@echo "  make cursor-diff      Show differences between repo and installed"
+	@echo "  make all              Sync Doom Emacs and opencode configs"
 	@echo
 	@echo "DOOM EMACS:"
 	@echo "  make doom-sync        Backup and sync Doom Emacs config"
@@ -646,7 +575,7 @@ help:
 	@echo "  make soft-test        Validate Fish scripts (syntax, structure, README catalog, rerun safety)"
 	@echo
 	@echo "SHORTCUTS:"
-	@echo "  make sync             Sync all configs (Doom, Cursor, Tmux, OpenClaw, opencode)"
+	@echo "  make sync             Sync all configs (Doom, Tmux, OpenClaw, opencode)"
 	@echo "  make backup           Backup all configs"
 	@echo "  make restore          Restore all from most recent backups"
 	@echo

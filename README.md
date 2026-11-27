@@ -109,12 +109,10 @@ The **Rerun** column says what a second run does:
 | `./drone.fish` | pacman / AUR / GitHub release | legacy | Drone CLI (CI/CD command-line tool) |
 | `./dust.fish` | mise / cargo / pacman | legacy | dust (disk usage analyzer) |
 | `./elixir_and_erlang.fish` | mise | update | Pinned versions of Erlang & Elixir via Mise |
-| `./elixirls.fish` | GitHub release | legacy | ElixirLS LSP server for Elixir from GitHub releases |
 | `./emacs.fish` | pacman / AUR | legacy | Emacs 30 |
 | `./epub_reader.fish` | pacman | legacy | Free epub reader |
 | `./executor.fish` | npm via mise | update | Executor (MCP gateway for coding agents) |
 | `./exiftool.fish` | pacman | legacy | ExifTool |
-| `./expert_elixir_lsp.fish` | GitHub release | legacy | Elixir's Expert LSP server from GitHub releases |
 | `./ffmpeg.fish` | pacman | legacy | FFmpeg multimedia framework |
 | `./filezilla.fish` | pacman | legacy | FileZilla (FTP client) |
 | `./fwup.fish` | source build | update | fwup (firmware update tool) from source |

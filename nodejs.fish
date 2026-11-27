@@ -55,9 +55,24 @@ mise activate fish | source
 set fish_config_file ~/.config/fish/config.fish
 set activation_line "mise activate fish | source"
 
-if not grep -Fxq "$activation_line" $fish_config_file
+if not grep -Fxq "$activation_line" $fish_config_file 2>/dev/null
     echo "$activation_line" >> $fish_config_file
     echo "🔧 Added automatic Mise activation to $fish_config_file"
+end
+
+# A script cannot change the PATH of the shell that started it, and that shell
+# only runs config.fish at startup. Universal fish variables reach every running
+# fish session at once, so putting the Mise shims on fish_user_paths makes
+# 'node' work in the current terminal without opening a new one.
+set mise_shims "$HOME/.local/share/mise/shims"
+mise reshim
+if not contains -- "$mise_shims" $fish_user_paths
+    fish_add_path -U "$mise_shims"
+    if test $status -ne 0
+        echo "❌ Failed to add $mise_shims to the Fish PATH."
+        exit 1
+    end
+    echo "🔧 Added Mise shims to the Fish PATH (applies to open terminals too)"
 end
 
 # === 6. Verify installations ===
@@ -80,11 +95,7 @@ end
 echo
 echo "🎉 Node.js setup complete via Mise!"
 echo
-echo "💡 Important:"
-echo "   To use 'node', 'npm', and 'npx' in this terminal immediately,"
-echo "   run the following command in your current shell:"
-echo "       mise activate fish | source"
-echo "   In future terminals, this will happen automatically thanks to the config file update."
+echo "💡 'node', 'npm' and 'npx' work in this terminal now, and in new ones."
 echo
 echo "📚 Installed versions:"
 echo "   Node.js → $node_version"

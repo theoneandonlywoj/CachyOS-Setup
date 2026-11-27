@@ -29,18 +29,7 @@ if command -v mise > /dev/null
     
     # Try to install Kafka via Mise
     echo "🔍 Checking if Kafka is available via Mise..."
-    if test "$KAFKA_VERSION" = "latest"
-        mise install kafka@latest
-        if test $status -eq 0
-            mise use -g kafka@latest
-        end
-    else
-        mise install kafka@$KAFKA_VERSION
-        if test $status -eq 0
-            mise use -g kafka@$KAFKA_VERSION
-        end
-    end
-    
+    mise use -g kafka@$KAFKA_VERSION
     if test $status -eq 0
         echo "✅ Kafka CLI installed via Mise."
         set kafka_installed_via_mise true
@@ -48,6 +37,9 @@ if command -v mise > /dev/null
         set -x PATH ~/.local/share/mise/shims $PATH
         mise activate fish | source
         mise reshim
+    else if test -n "$(mise ls --installed kafka 2>/dev/null)"
+        echo "❌ Kafka update via Mise failed; the installed version is untouched. Rerun: ./kafka_cli.fish"
+        exit 1
     else
         echo "⚠ Kafka installation via Mise failed. Falling back to Apache releases..."
         set use_mise false
@@ -65,15 +57,23 @@ if not set -q kafka_installed_via_mise
     set arch (uname -m)
     set scala_version "2.13"  # Default Scala version for Kafka
     
+    set KAFKA_INSTALL_DIR "$HOME/.local/kafka"
+
+    # Recover from an interrupted swap: restore the old install.
+    if not test -e $KAFKA_INSTALL_DIR; and test -e $KAFKA_INSTALL_DIR.old
+        mv $KAFKA_INSTALL_DIR.old $KAFKA_INSTALL_DIR
+        or exit 1
+    end
+
     # Get latest version from Apache Kafka if needed
     if test "$KAFKA_VERSION" = "latest"
         echo "🔍 Fetching latest Kafka version..."
-        # Try to get latest version from Apache Kafka downloads page
-        set KAFKA_VERSION (curl -s https://kafka.apache.org/downloads | grep -oP 'kafka_\d+\.\d+-\K[\d.]+' | head -n1)
-        
+        set -l listing (curl -fsSL https://downloads.apache.org/kafka/)
+        or set listing  # a partial listing could pick an older version
+        set KAFKA_VERSION (printf '%s\n' $listing | string match -rg 'href="([0-9]+\.[0-9]+\.[0-9]+)/"' | sort -V | tail -n 1)
         if test -z "$KAFKA_VERSION"
-            echo "⚠ Failed to fetch latest version. Using fallback..."
-            set KAFKA_VERSION "3.7.0"
+            echo "❌ Could not determine the latest Kafka version; an existing install is untouched. Rerun: ./kafka_cli.fish"
+            exit 1
         end
     end
     
@@ -82,23 +82,25 @@ if not set -q kafka_installed_via_mise
     set KAFKA_URL "https://archive.apache.org/dist/kafka/$KAFKA_VERSION/$KAFKA_FILENAME"
     set KAFKA_TMP_DIR (mktemp -d)
     set KAFKA_TAR "$KAFKA_TMP_DIR/kafka.tgz"
-    set KAFKA_INSTALL_DIR "$HOME/.local/kafka"
-    
+
+    # Drop stale staging.
+    rm -rf $KAFKA_INSTALL_DIR.new $KAFKA_INSTALL_DIR.old
+
     # Download Kafka
-    curl -L -o $KAFKA_TAR $KAFKA_URL
+    curl -fL -o $KAFKA_TAR $KAFKA_URL
     if test $status -ne 0
-        echo "❌ Failed to download Kafka from Apache."
+        echo "❌ Failed to download Kafka; an existing install is untouched. Rerun: ./kafka_cli.fish"
         rm -rf $KAFKA_TMP_DIR
         exit 1
     end
     
     # Extract Kafka
     echo "📦 Extracting Kafka..."
-    mkdir -p $KAFKA_INSTALL_DIR
+    mkdir -p (dirname $KAFKA_INSTALL_DIR)
     cd $KAFKA_TMP_DIR
     tar -xzf $KAFKA_TAR
     if test $status -ne 0
-        echo "❌ Failed to extract Kafka archive."
+        echo "❌ Failed to extract Kafka; an existing install is untouched. Rerun: ./kafka_cli.fish"
         rm -rf $KAFKA_TMP_DIR
         exit 1
     end
@@ -107,9 +109,21 @@ if not set -q kafka_installed_via_mise
     set kafka_dir (find . -maxdepth 1 -type d -name "kafka_*" | head -n1)
     
     if test -n "$kafka_dir" -a -d "$kafka_dir"
-        # Move to installation directory
-        rm -rf $KAFKA_INSTALL_DIR
-        mv $kafka_dir $KAFKA_INSTALL_DIR
+        # Stage next to the install, then swap; the old directory goes last
+        mv $kafka_dir $KAFKA_INSTALL_DIR.new
+        and begin
+            if test -e $KAFKA_INSTALL_DIR
+                mv $KAFKA_INSTALL_DIR $KAFKA_INSTALL_DIR.old; and mv $KAFKA_INSTALL_DIR.new $KAFKA_INSTALL_DIR; and rm -rf $KAFKA_INSTALL_DIR.old
+            else
+                mv $KAFKA_INSTALL_DIR.new $KAFKA_INSTALL_DIR
+            end
+        end
+        if test $status -ne 0
+            test -e $KAFKA_INSTALL_DIR; or mv $KAFKA_INSTALL_DIR.old $KAFKA_INSTALL_DIR
+            rm -rf $KAFKA_TMP_DIR
+            echo "❌ Failed to install Kafka. Rerun: ./kafka_cli.fish"
+            exit 1
+        end
         
         # Create symlinks for common CLI tools in a bin directory
         mkdir -p $HOME/.local/bin
@@ -194,12 +208,6 @@ echo
 echo "🎉 Kafka CLI setup complete!"
 echo
 if set -q kafka_installed_via_mise
-    echo "💡 Important:"
-    echo "   To use Kafka CLI tools in this terminal immediately,"
-    echo "   run the following command in your current shell:"
-    echo "       mise activate fish | source"
-    echo "   In future terminals, this will happen automatically thanks to the config file update."
-    echo
     echo "📚 Installed version: $KAFKA_VERSION (via Mise)"
 else
     echo "💡 Important:"

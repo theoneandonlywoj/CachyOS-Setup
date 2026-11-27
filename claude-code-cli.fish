@@ -6,51 +6,47 @@
 
 echo "🚀 Starting Claude Code CLI installation..."
 
-# === 1. Check if Claude Code CLI is already installed ===
-command -q claude; and set -l claude_installed "installed"
-if test -n "$claude_installed"
-    echo "✅ Claude Code CLI is already installed."
-    claude --version 2>/dev/null | head -n 1
-    read -P "Do you want to reinstall? [y/N] " reinstall
-    if test "$reinstall" != "y" -a "$reinstall" != "Y"
-        echo "⚠ Skipping Claude Code CLI installation."
-        exit 0
-    end
-    echo "📦 Removing existing Claude Code CLI installation..."
-    rm -f "$HOME/.local/bin/claude"
-    rm -rf "$HOME/.local/share/claude"
-    if test $status -ne 0
-        echo "❌ Failed to remove Claude Code CLI."
-        exit 1
-    end
-    echo "✅ Claude Code CLI removed."
-end
-
-# === 2. Ensure ~/.local/bin exists (installer target) ===
-echo "📁 Ensuring install directory exists..."
+# === 1. Ensure ~/.local/bin exists and is in PATH (installer target) ===
 mkdir -p "$HOME/.local/bin"
 if test $status -ne 0
     echo "❌ Failed to create ~/.local/bin."
     exit 1
 end
 
-# === 3. Install Claude Code CLI (official native installer) ===
-echo "📦 Installing Claude Code CLI (native installer)..."
-curl -fsSL https://claude.ai/install.sh | bash
+# fish_add_path returns 1 when the directory is already present. Only treat a
+# failed addition as an error when the directory is not already on PATH.
+if not contains -- "$HOME/.local/bin" $PATH
+    fish_add_path -U "$HOME/.local/bin"
+    if test $status -ne 0
+        echo "❌ Failed to add ~/.local/bin to the Fish PATH."
+        exit 1
+    end
+end
+
+# === 2. Install or update Claude Code CLI (official native installer) ===
+# Download first, then run: piping curl into bash reports bash's exit status, which is 0 on an empty download.
+# Extra arguments go to the installer: run_installer <url> -y
+function run_installer --argument-names url
+    set -l f (mktemp); or return 1
+    curl -fsSL -o $f $url; and bash $f $argv[2..-1]
+    set -l st $status
+    rm -f $f
+    return $st
+end
+
+if command -q claude
+    echo "🔄 Updating Claude Code CLI in place..."
+    claude update; or run_installer https://claude.ai/install.sh
+else
+    echo "📦 Installing Claude Code CLI (native installer)..."
+    run_installer https://claude.ai/install.sh
+end
 if test $status -ne 0
-    echo "❌ Failed to install Claude Code CLI."
+    echo "❌ Claude Code update failed; the existing install is untouched. Rerun: ./claude-code-cli.fish"
     exit 1
 end
-echo "✅ Claude Code CLI installed."
 
-# === 4. Ensure ~/.local/bin is in PATH for this session ===
-set -q PATH; or set PATH ""
-if not string match -q "*$HOME/.local/bin*" $PATH
-    set -gx PATH "$HOME/.local/bin" $PATH
-    echo "💡 Added ~/.local/bin to PATH for this session."
-end
-
-# === 5. Verify installation ===
+# === 3. Verify installation ===
 echo
 echo "🧪 Verifying installation..."
 if command -q claude

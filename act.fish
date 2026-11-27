@@ -12,11 +12,7 @@ if not test -f /etc/arch-release
     exit 1
 end
 
-# === 2. Update package database ===
-echo "📦 Updating package database..."
-sudo pacman -Sy --noconfirm
-
-# === 3. Install act from official repositories ===
+# === 2. Install act from official repositories ===
 echo "📥 Installing act from official repositories..."
 sudo pacman -S --noconfirm --needed act
 if test $status -ne 0
@@ -24,7 +20,7 @@ if test $status -ne 0
     exit 1
 end
 
-# === 4. Install Docker (required for act) ===
+# === 3. Install Docker (required for act) ===
 echo "🐳 Installing Docker for act container support..."
 if not command -v docker >/dev/null
     echo "📦 Installing Docker..."
@@ -47,7 +43,7 @@ else
     echo "✅ Docker is already installed."
 end
 
-# === 5. Verify installation ===
+# === 4. Verify installation ===
 echo "🧪 Verifying act installation..."
 if command -v act >/dev/null
     echo "✅ act installed successfully!"
@@ -57,7 +53,7 @@ else
     exit 1
 end
 
-# === 6. Create act configuration directory ===
+# === 5. Create act configuration directory ===
 echo "📁 Setting up act configuration directory..."
 mkdir -p ~/.act
 if test $status -ne 0
@@ -65,28 +61,33 @@ if test $status -ne 0
     exit 1
 end
 
-# === 7. Create sample act configuration ===
-echo "⚙️ Creating sample act configuration..."
-printf '%s\n' \
-'# act configuration file' \
-'# See: https://github.com/nektos/act#configuration' \
-'' \
-'# Default platform (linux/amd64, linux/arm64, etc.)' \
-'-P ubuntu-latest=catthehacker/ubuntu:act-latest' \
-'' \
-'# Default container image' \
-'-P ubuntu-20.04=catthehacker/ubuntu:act-20.04' \
-'-P ubuntu-18.04=catthehacker/ubuntu:act-18.04' \
-'' \
-'# Enable verbose output' \
-'--verbose' \
-'' \
-'# Enable artifact server' \
-'--artifact-server-path /tmp/artifacts' > ~/.actrc
+# === 6. Create sample act configuration ===
+if test -e ~/.actrc; or test -L ~/.actrc
+    echo "ℹ Keeping the existing ~/.actrc."
+else
+    echo "⚙️ Creating sample act configuration..."
+    printf '%s\n' \
+        '# act configuration file' \
+        '# See: https://github.com/nektos/act#configuration' \
+        '' \
+        '# Default platform (linux/amd64, linux/arm64, etc.)' \
+        '-P ubuntu-latest=catthehacker/ubuntu:act-latest' \
+        '' \
+        '# Default container image' \
+        '-P ubuntu-20.04=catthehacker/ubuntu:act-20.04' \
+        '-P ubuntu-18.04=catthehacker/ubuntu:act-18.04' \
+        '' \
+        '# Enable verbose output' \
+        '--verbose' \
+        '' \
+        '# Enable artifact server' \
+        '--artifact-server-path /tmp/artifacts' > ~/.actrc.tmp
+    and mv ~/.actrc.tmp ~/.actrc
+    or begin; echo "❌ Failed to write ~/.actrc. Rerun: ./act.fish"; exit 1; end
+    echo "✅ Created sample configuration at ~/.actrc"
+end
 
-echo "✅ Created sample configuration at ~/.actrc"
-
-# === 8. Display usage instructions ===
+# === 7. Display usage instructions ===
 echo
 echo "🎉 act installation complete!"
 echo "📝 To get started with act:"

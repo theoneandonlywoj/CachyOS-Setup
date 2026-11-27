@@ -28,7 +28,7 @@ if not command -v mix > /dev/null
     echo "   Please install Elixir first by running:"
     echo "   ./elixir_and_erlang.fish"
     echo "   Or install Elixir via your package manager:"
-    echo "   sudo pacman -S elixir"
+    echo "   sudo pacman -S elixir"  # rerun-gate: allow hint text
     exit 1
 end
 
@@ -78,29 +78,17 @@ end
 echo "✅ Elixir version is compatible (>= 1.18)"
 echo
 
-# === 2. Check if Livebook is already installed ===
-if command -v livebook > /dev/null
-    echo "⚠ Livebook CLI is already installed."
-    livebook --version
-    read -P "Do you want to reinstall? [y/N] " reinstall
-    if test "$reinstall" != "y" -a "$reinstall" != "Y"
-        echo "⚠ Skipping Livebook CLI installation."
-        exit 0
-    end
-    echo "🔄 Reinstalling Livebook CLI..."
-end
-
-# === 3. Install Livebook CLI via Mix escript ===
+# === 2. Install Livebook CLI via Mix escript ===
 echo "📦 Installing Livebook CLI via Mix escript..."
-mix escript.install hex livebook
+mix escript.install hex livebook --force
 if test $status -ne 0
-    echo "❌ Failed to install Livebook CLI. Aborting."
+    echo "❌ Failed to install Livebook CLI. Rerun: ./livebook.fish"
     exit 1
 end
 
 echo "✅ Livebook CLI installed via Mix escript."
 
-# === 4. Add Mix escripts directory to Fish PATH ===
+# === 3. Add Mix escripts directory to Fish PATH ===
 set escripts_dir ~/.mix/escripts
 if test -d "$escripts_dir"
     echo "🔧 Adding Mix escripts directory to Fish PATH..."
@@ -117,7 +105,7 @@ else
     echo "⚠ Warning: Expected escripts directory not found at $escripts_dir"
 end
 
-# === 5. Verify installation ===
+# === 4. Verify installation ===
 echo
 echo "🧪 Verifying installation..."
 set -x PATH $escripts_dir $PATH

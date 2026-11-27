@@ -3,106 +3,17 @@
 # Purpose: Install GitHub CLI (gh) on CachyOS (Arch Linux)
 # Author: theoneandonlywoj
 
-# === Version configuration ===
-set GH_VERSION "latest"  # Use "latest" or specific version like "2.47.0"
-
 echo "🚀 Starting GitHub CLI (gh) installation..."
-echo "📌 Target version: $GH_VERSION"
 echo
 
-# === 1. Check if already installed ===
-if command -v gh > /dev/null
-    set current_version (gh --version | head -n1 | awk '{print $3}')
-    echo "✅ GitHub CLI is already installed: v$current_version"
-    echo "🔍 Checking if update is needed..."
+# === 1. Install GitHub CLI ===
+sudo pacman -S --needed --noconfirm github-cli
+if test $status -ne 0
+    echo "❌ Failed to install GitHub CLI. Rerun: ./github_cli.fish"
+    exit 1
 end
 
-# === 2. Determine installation method ===
-echo "🔍 Determining best installation method..."
-
-# Check if AUR helper is available
-set AUR_HELPER ""
-for helper in yay paru trizen pikaur
-    if command -v $helper > /dev/null
-        set AUR_HELPER $helper
-        break
-    end
-end
-
-# === 3. Installation methods ===
-if test -n "$AUR_HELPER"
-    echo "📦 Installing via AUR helper: $AUR_HELPER"
-
-    # Install using AUR helper
-    $AUR_HELPER -S --needed --noconfirm github-cli
-
-    if test $status -ne 0
-        echo "❌ Failed to install via $AUR_HELPER. Trying official repository..."
-        sudo pacman -S --needed --noconfirm github-cli
-    end
-
-else if pacman -Si github-cli > /dev/null 2>&1
-    echo "📦 Installing from official Arch repository..."
-    sudo pacman -S --needed --noconfirm github-cli
-
-else
-    echo "📥 Installing via official script..."
-
-    # Install dependencies for script method
-    echo "📦 Installing required dependencies..."
-    sudo pacman -S --needed --noconfirm curl tar
-
-    # Download and run official install script
-    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
-        sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-    sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
-
-    echo "deb [arch=(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | \
-        sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-
-    # For Arch, we need to use the binary directly
-    echo "🔧 Downloading binary release..."
-    set temp_dir (mktemp -d)
-    cd $temp_dir
-
-    if test "$GH_VERSION" = "latest"
-        set download_url (curl -s https://api.github.com/repos/cli/cli/releases/latest | grep "browser_download_url.*linux_amd64.tar.gz" | cut -d '"' -f 4)
-    else
-        set download_url "https://github.com/cli/cli/releases/download/v$GH_VERSION/gh_{$GH_VERSION}_linux_amd64.tar.gz"
-    end
-
-    echo "📥 Downloading from: $download_url"
-    curl -L -o gh.tar.gz "$download_url"
-
-    if test $status -ne 0
-        echo "❌ Failed to download GitHub CLI. Aborting."
-        exit 1
-    end
-
-    # Extract and install
-    echo "📦 Extracting archive..."
-    tar -xzf gh.tar.gz
-    set gh_dir (find . -name "gh_*_linux_amd64" -type d | head -n1)
-
-    if test -n "$gh_dir" -a -d "$gh_dir"
-        echo "🔧 Installing binary..."
-        sudo cp -r $gh_dir/bin/gh /usr/local/bin/
-        sudo cp -r $gh_dir/share/* /usr/local/share/
-
-        # Install man pages
-        if test -d "$gh_dir/share/man"
-            sudo cp -r $gh_dir/share/man/* /usr/local/share/man/
-        end
-    else
-        echo "❌ Could not find extracted gh directory. Aborting."
-        exit 1
-    end
-
-    # Cleanup
-    rm -rf $temp_dir
-end
-
-# === 4. Verify installation ===
+# === 2. Verify installation ===
 echo "🧪 Verifying installation..."
 
 if command -v gh > /dev/null
@@ -113,7 +24,7 @@ else
     exit 1
 end
 
-# === 5. Set up completion ===
+# === 3. Set up completion ===
 echo "🔧 Setting up shell completion..."
 
 # Fish completion
@@ -132,7 +43,7 @@ else
     echo "⚠️  Could not install Fish completion"
 end
 
-# === 6. Authenticate (optional) ===
+# === 4. Authenticate (optional) ===
 echo "🔐 Authentication setup (optional)..."
 echo
 echo "💡 To authenticate with GitHub, run:"
@@ -144,18 +55,109 @@ echo "   - Create issues and pull requests"
 echo "   - View and manage notifications"
 echo "   - And much more!"
 
-# === 7. Show useful commands ===
+# === 5. Optional gh-stack extension ===
 echo
-echo "📚 Useful GitHub CLI commands:"
-echo "   gh auth login          - Authenticate with GitHub"
-echo "   gh repo create         - Create a new repository"
-echo "   gh repo clone owner/repo - Clone a repository"
-echo "   gh issue create        - Create a new issue"
-echo "   gh pr create           - Create a pull request"
-echo "   gh gist create         - Create a gist"
-echo "   gh help                - Show all available commands"
+if test -t 0
+    read -l -P "Install/update the github/gh-stack extension? [y/N] " install_stack
+    if test "$install_stack" = "y" -o "$install_stack" = "Y"
+        if not gh auth status >/dev/null 2>&1
+            echo "⚠️  gh-stack skipped: run gh auth login, then rerun ./github_cli.fish"
+        else
+            if gh extension list 2>/dev/null | grep -Fq github/gh-stack
+                gh extension upgrade gh-stack
+            else
+                gh extension install github/gh-stack
+            end
+            if test $status -ne 0
+                echo "❌ gh-stack install/update failed. Rerun: ./github_cli.fish"
+                exit 1
+            end
+            echo "✅ gh-stack ready"
+        end
+    end
+else
+    echo "ℹ No terminal: gh-stack skipped."
+end
 
-# === 8. Test basic functionality ===
+# === 6. Cheatsheet ===
+echo
+echo "════════════════════════════════════════════════════════"
+echo "📘 gh CLI cheatsheet — common operations"
+echo "════════════════════════════════════════════════════════"
+echo
+echo "🔐 Auth"
+echo "   gh auth status                       # check login state"
+echo "   gh auth login                        # log in"
+echo
+echo "📁 Repos"
+echo "   gh repo create my-repo --public      # create a new repo"
+echo "   gh repo clone owner/repo             # clone a repo"
+echo "   gh repo view --web                   # open repo in browser"
+echo "   gh repo fork owner/repo --clone      # fork + clone"
+echo
+echo "🔀 Pull requests"
+echo "   gh pr list                           # list open PRs"
+echo "   gh pr status                         # PRs relevant to you"
+echo "   gh pr create --fill                  # create PR from current branch"
+echo "   gh pr view 123 --web                 # open PR #123 in browser"
+echo "   gh pr checkout 123                   # check out PR #123 locally"
+echo "   gh pr merge 123 --squash             # squash-merge PR #123"
+echo "   gh pr diff 123                       # view PR #123's diff"
+echo "   gh pr review 123 --approve           # approve PR #123"
+echo
+echo "🐞 Issues"
+echo "   gh issue list                        # list open issues"
+echo "   gh issue create --title \"Bug\" --body \"...\"  # create an issue"
+echo "   gh issue close 42                    # close issue #42"
+echo
+echo "⚙️  Workflows / CI"
+echo "   gh run list                          # list recent workflow runs"
+echo "   gh run watch                         # watch the latest run live"
+echo "   gh workflow run deploy.yml           # trigger a workflow"
+echo
+echo "🧩 Extensions"
+echo "   gh extension list                    # list installed extensions"
+echo "   gh extension upgrade --all           # upgrade all extensions"
+echo
+echo "────────────────────────────────────────────────────────"
+echo "📚 gh-stack cheatsheet — stacked pull requests"
+echo "────────────────────────────────────────────────────────"
+echo
+echo "🚀 Build a stack"
+echo "   gh stack init                        # start a stack (interactive)"
+echo "   gh stack init feat-auth feat-api     # start a stack with named branches"
+echo "   gh stack add feat-ui                 # add a new branch on top"
+echo "   gh stack add -Am \"Add login\"          # stage all + commit + auto-name branch"
+echo
+echo "📤 Push & submit"
+echo "   gh stack push                        # push all branches in the stack"
+echo "   gh stack submit                      # push + open/update PRs for the stack"
+echo "   gh stack submit --auto               # submit without the interactive editor"
+echo
+echo "🔄 Keep in sync"
+echo "   gh stack sync                        # fetch, rebase, push, sync PRs (one shot)"
+echo "   gh stack sync --prune                # sync + delete branches for merged PRs"
+echo "   gh stack rebase                      # cascade-rebase the whole stack"
+echo "   gh stack rebase --continue           # resume rebase after fixing conflicts"
+echo
+echo "🧭 Navigate"
+echo "   gh stack view                        # show the current stack"
+echo "   gh stack up / gh stack down          # move one layer up/down"
+echo "   gh stack top / gh stack bottom       # jump to top/bottom of the stack"
+echo "   gh stack switch                      # interactive branch picker"
+echo "   gh stack checkout 7                  # check out stack #7 (or a PR #/URL)"
+echo
+echo "🛠️  Manage"
+echo "   gh stack modify                      # reorder/drop/fold branches (TUI)"
+echo "   gh stack merge                       # merge the stack's PRs (interactive)"
+echo "   gh stack merge --yes --squash        # merge whole stack, squashing, no prompt"
+echo "   gh stack unstack                     # remove current stack (local + GitHub)"
+echo "   gh stack alias                       # add short 'gs' alias (gs push, gs view...)"
+echo
+echo "   Full reference: gh stack --help  /  gh stack <command> --help"
+echo "════════════════════════════════════════════════════════"
+
+# === 7. Test basic functionality ===
 echo
 echo "🧪 Testing basic functionality..."
 if gh --version > /dev/null 2>&1

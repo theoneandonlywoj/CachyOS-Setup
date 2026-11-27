@@ -6,90 +6,44 @@
 
 echo "🚀 Starting Slack installation from AUR..."
 
-# === 1. Check if Slack is already installed ===
-command -q slack; and set -l slack_installed "installed"
-if test -n "$slack_installed"
-    echo "✅ Slack is already installed."
-    read -P "Do you want to reinstall? [y/N] " reinstall
-    if test "$reinstall" != "y" -a "$reinstall" != "Y"
-        echo "⚠ Skipping Slack installation."
-        exit 0
-    end
-    echo "📦 Removing existing Slack installation..."
-    sudo pacman -R --noconfirm slack-desktop
-    if test $status -ne 0
-        echo "❌ Failed to remove Slack."
-        exit 1
-    end
-    echo "✅ Slack removed."
-end
-
-# === 2. Check for AUR helper ===
-command -q yay; and set -l yay_installed "installed"
-command -q paru; and set -l paru_installed "installed"
-
-if test -z "$yay_installed" -a -z "$paru_installed"
-    echo "⚠ No AUR helper found."
-    read -P "Do you want to install yay (AUR helper)? [Y/n] " install_helper
-    
-    if test "$install_helper" != "n" -a "$install_helper" != "N"
-        echo "📦 Installing yay..."
-        cd /tmp
-        git clone https://aur.archlinux.org/yay-bin.git
-        cd yay-bin
-        makepkg -si --noconfirm
-        if test $status -ne 0
-            echo "❌ Failed to install yay."
+# === 1. Install Slack from AUR (never upgrade an installed package) ===
+if pacman -Qq slack-desktop >/dev/null 2>&1
+    echo "✅ Slack is already installed; upgrades come from 'paru -Syu'."
+else
+    set -l aur_helper
+    if command -q paru
+        set aur_helper paru
+    else if command -q yay
+        set aur_helper yay
+    else if test -t 0
+        echo "⚠ No AUR helper found."
+        read -l -P "Do you want to install yay (AUR helper)? [Y/n] " install_helper
+        if test "$install_helper" = "n" -o "$install_helper" = "N"
+            echo "❌ An AUR helper is required to install Slack."
             exit 1
         end
-        echo "✅ yay installed."
+        set -l build_dir (mktemp -d)
+        git clone https://aur.archlinux.org/yay-bin.git $build_dir/yay-bin
+        and cd $build_dir/yay-bin
+        and makepkg -si --noconfirm
+        if test $status -ne 0
+            echo "❌ Failed to install yay. Rerun: ./slack.fish"
+            exit 1
+        end
+        cd -
+        rm -rf $build_dir
+        set aur_helper yay
     else
-        echo "❌ yay is required to install Slack from AUR."
+        echo "❌ No AUR helper found: install paru first"
         exit 1
     end
-else
-    echo "✅ AUR helper found."
+
+    echo "📦 Installing Slack from AUR using $aur_helper..."
+    $aur_helper -S --needed --noconfirm slack-desktop
+    or begin; echo "❌ Failed to install Slack from AUR. Rerun: ./slack.fish"; exit 1; end
 end
 
-# === 3. Install Slack from AUR ===
-set aur_helper "yay"
-if test -n "$paru_installed"
-    set aur_helper "paru"
-end
-
-echo "📦 Installing Slack from AUR using $aur_helper..."
-$aur_helper -S --noconfirm slack-desktop
-if test $status -ne 0
-    echo "❌ Failed to install Slack from AUR."
-    exit 1
-end
-echo "✅ Slack installed."
-
-# === 4. Check and fix snapper Boost library issue (if present) ===
-if test -f /usr/bin/snapper
-    echo
-    echo "🔧 Checking for snapper Boost library issue..."
-    snapper --version > /dev/null 2>&1
-    if test $status -ne 0
-        echo "⚠ Detected snapper Boost library version mismatch."
-        echo "💡 This can happen after Boost updates."
-        read -P "Do you want to fix snapper? [y/N] " fix_snapper
-        
-        if test "$fix_snapper" = "y" -o "$fix_snapper" = "Y"
-            echo "📦 Reinstalling snapper to fix Boost library version mismatch..."
-            sudo pacman -S --noconfirm snapper
-            if test $status -eq 0
-                echo "✅ Snapper fixed successfully."
-            else
-                echo "⚠ Failed to fix snapper, but Slack is still fully functional."
-            end
-        end
-    else
-        echo "✅ Snapper is working correctly."
-    end
-end
-
-# === 5. Verify installation ===
+# === 2. Verify installation ===
 echo
 echo "🧪 Verifying installation..."
 command -q slack

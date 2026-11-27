@@ -1,9 +1,8 @@
-# === Makefile for Doom Emacs, Cursor, Tmux & opencode config sync ===
+# === Makefile for Doom Emacs, Tmux & opencode config sync ===
 # Moves existing configs to timestamped backups and installs new configs
 # Supports restore from the most recent backup
 
 .PHONY: all sync backup restore soft-test help \
-        cursor-sync cursor-backup cursor-restore cursor-diff \
         doom-sync doom-backup doom-restore \
         tmux-sync tmux-backup tmux-restore tmux-diff \
         openclaw-sync openclaw-backup openclaw-restore \
@@ -12,19 +11,13 @@
         purge-claude-skills purge-opencode-skills \
         check-skills-mirror \
         mermaid-install mermaid-check \
-        herdr-sync herdr-backup herdr-restore herdr-diff \
-        hsync hbackup hrestore hdiff
+        herdr-global-set herdr-global-unset herdr-global-backup herdr-global-restore herdr-global-diff herdr-remove-backups
 
 # Generate timestamp in format YYYY_mm_dd_hh_MM
 TIMESTAMP := $(shell date +"%Y_%m_%d_%H_%M")
 
 # Doom Emacs paths
 DOOM_BACKUP_DIR := $(HOME)/.doom.d_backup_$(TIMESTAMP)
-
-# Cursor paths (Linux)
-CURSOR_CONFIG_DIR := $(HOME)/.config/Cursor/User
-CURSOR_BACKUP_DIR := $(HOME)/.config/Cursor/User_backup_$(TIMESTAMP)
-CURSOR_REPO_DIR := ./.config/Cursor/User
 
 # Tmux paths
 TMUX_CONFIG := $(HOME)/.tmux.conf
@@ -54,73 +47,13 @@ HERDR_REPO_DIR := ./.config/herdr
 HERDR_HOME_DIR := $(HOME)/.config/herdr
 HERDR_REPO_CONFIG := $(HERDR_REPO_DIR)/config.toml
 HERDR_HOME_CONFIG := $(HERDR_HOME_DIR)/config.toml
-HERDR_BACKUP_FILE := $(HERDR_HOME_DIR)/config.toml.backup_$(TIMESTAMP)
 
 # ============================================================
 # DEFAULT TARGET
 # ============================================================
 
-all: doom-sync cursor-sync opencode-sync herdr-sync
+all: doom-sync opencode-sync herdr-global-set
 	@echo "✅ All configurations synced!"
-
-# ============================================================
-# CURSOR IDE CONFIGURATION
-# ============================================================
-
-cursor-sync: cursor-backup
-	@echo "📦 Copying Cursor configuration..."
-	@mkdir -p "$(CURSOR_CONFIG_DIR)"
-	@cp "$(CURSOR_REPO_DIR)/settings.json" "$(CURSOR_CONFIG_DIR)/settings.json"
-	@cp "$(CURSOR_REPO_DIR)/keybindings.json" "$(CURSOR_CONFIG_DIR)/keybindings.json"
-	@echo "✅ Cursor configuration synced to $(CURSOR_CONFIG_DIR)"
-	@# Configure KDE Plasma keyboard: disable 3rd level key (AltGr) so Ctrl+Alt shortcuts work
-	@if [ "$$XDG_CURRENT_DESKTOP" = "KDE" ] && command -v kwriteconfig6 >/dev/null 2>&1; then \
-		echo "⌨️  Configuring KDE Plasma keyboard (disabling AltGr as 3rd level key)..."; \
-		kwriteconfig6 --file kxkbrc --group Layout --key Options "lv3:ralt_alt"; \
-		echo "✅ KDE keyboard configured: Right Alt now works as regular Alt"; \
-		echo "💡 Log out and back in (or run 'setxkbmap -option lv3:ralt_alt') to apply"; \
-	fi
-	@echo "💡 Restart Cursor to apply changes"
-
-cursor-backup:
-	@if [ -f "$(CURSOR_CONFIG_DIR)/settings.json" ] || [ -f "$(CURSOR_CONFIG_DIR)/keybindings.json" ]; then \
-		echo "💾 Backing up existing Cursor config to $(CURSOR_BACKUP_DIR)..."; \
-		mkdir -p "$(CURSOR_BACKUP_DIR)"; \
-		if [ -f "$(CURSOR_CONFIG_DIR)/settings.json" ]; then \
-			cp "$(CURSOR_CONFIG_DIR)/settings.json" "$(CURSOR_BACKUP_DIR)/settings.json"; \
-		fi; \
-		if [ -f "$(CURSOR_CONFIG_DIR)/keybindings.json" ]; then \
-			cp "$(CURSOR_CONFIG_DIR)/keybindings.json" "$(CURSOR_BACKUP_DIR)/keybindings.json"; \
-		fi; \
-		echo "✅ Backup created at $(CURSOR_BACKUP_DIR)"; \
-	else \
-		echo "ℹ️ No existing Cursor config found — skipping backup."; \
-	fi
-
-cursor-restore:
-	@echo "♻️  Restoring the most recent Cursor backup..."
-	@latest_backup=$$(ls -d $(HOME)/.config/Cursor/User_backup_* 2>/dev/null | sort -r | head -n 1); \
-	if [ -z "$$latest_backup" ]; then \
-		echo "❌ No Cursor backups found. Cannot restore."; \
-		exit 1; \
-	fi; \
-	echo "♻️  Restoring from $$latest_backup..."; \
-	if [ -f "$$latest_backup/settings.json" ]; then \
-		cp "$$latest_backup/settings.json" "$(CURSOR_CONFIG_DIR)/settings.json"; \
-	fi; \
-	if [ -f "$$latest_backup/keybindings.json" ]; then \
-		cp "$$latest_backup/keybindings.json" "$(CURSOR_CONFIG_DIR)/keybindings.json"; \
-	fi; \
-	echo "✅ Cursor restore complete from $$latest_backup"; \
-	echo "💡 Restart Cursor to apply changes"
-
-cursor-diff:
-	@echo "📊 Comparing Cursor configurations..."
-	@echo "=== settings.json ==="
-	@diff -u "$(CURSOR_CONFIG_DIR)/settings.json" "$(CURSOR_REPO_DIR)/settings.json" 2>/dev/null || echo "(files differ or missing)"
-	@echo
-	@echo "=== keybindings.json ==="
-	@diff -u "$(CURSOR_CONFIG_DIR)/keybindings.json" "$(CURSOR_REPO_DIR)/keybindings.json" 2>/dev/null || echo "(files differ or missing)"
 
 # ============================================================
 # DOOM EMACS CONFIGURATION
@@ -496,47 +429,53 @@ mermaid-check: mermaid-install
 # HERDR CONFIGURATION
 # ============================================================
 
-herdr-sync: herdr-backup
+herdr-global-set: herdr-global-backup
 	@echo "📦 Copying Herdr configuration and Fish helper scripts..."
-	@mkdir -p "$(HERDR_HOME_DIR)"
-	@cp "$(HERDR_REPO_CONFIG)" "$(HERDR_HOME_CONFIG)"
+	@mkdir -p "$(HERDR_HOME_DIR)" && cp "$(HERDR_REPO_CONFIG)" "$(HERDR_HOME_CONFIG)" || exit 1
 	@if [ -d "$(HERDR_REPO_DIR)/scripts" ]; then \
-		mkdir -p "$(HERDR_HOME_DIR)/scripts"; \
-		cp "$(HERDR_REPO_DIR)"/scripts/* "$(HERDR_HOME_DIR)/scripts/"; \
-		chmod +x "$(HERDR_HOME_DIR)"/scripts/*; \
+		mkdir -p "$(HERDR_HOME_DIR)/scripts" && \
+		cp "$(HERDR_REPO_DIR)"/scripts/* "$(HERDR_HOME_DIR)/scripts/" && \
+		chmod +x "$(HERDR_HOME_DIR)"/scripts/* || exit 1; \
 	fi
 	@if command -v herdr >/dev/null 2>&1; then \
 		echo "🔄 Reloading Herdr config..."; \
 		herdr server reload-config >/dev/null 2>&1 || true; \
+	else \
+		echo "⚠️  herdr command not found — config copied, reload skipped"; \
 	fi
 	@echo "✅ Herdr configuration synced to $(HERDR_HOME_DIR)"
 
-herdr-backup:
+herdr-global-unset:
+	@$(MAKE) --no-print-directory herdr-global-backup
 	@if [ -f "$(HERDR_HOME_CONFIG)" ]; then \
-		echo "💾 Backing up existing $(HERDR_HOME_CONFIG) to $(HERDR_BACKUP_FILE)..."; \
-		cp "$(HERDR_HOME_CONFIG)" "$(HERDR_BACKUP_FILE)"; \
-		echo "✅ Backup created at $(HERDR_BACKUP_FILE)"; \
+		rm "$(HERDR_HOME_CONFIG)" || exit 1; \
+		echo "✅ Removed $(HERDR_HOME_CONFIG)"; \
 	else \
-		echo "ℹ️  No existing $(HERDR_HOME_CONFIG) found — skipping backup."; \
+		echo "ℹ️  No $(HERDR_HOME_CONFIG) to remove."; \
 	fi
-
-herdr-restore:
-	@echo "♻️  Restoring the most recent Herdr backup..."
-	@latest_backup=$$(ls -t "$(HERDR_HOME_DIR)"/config.toml.backup_* 2>/dev/null | head -n 1); \
-	if [ -z "$$latest_backup" ]; then \
-		echo "❌ No Herdr backups found. Cannot restore."; \
-		exit 1; \
-	fi; \
-	mkdir -p "$(HERDR_HOME_DIR)"; \
-	echo "♻️  Restoring from $$latest_backup..."; \
-	cp "$$latest_backup" "$(HERDR_HOME_CONFIG)"; \
-	echo "✅ Herdr restore complete from $$latest_backup"; \
-	if command -v herdr >/dev/null 2>&1; then \
+	@rmdir "$(HERDR_HOME_DIR)" 2>/dev/null || true
+	@if command -v herdr >/dev/null 2>&1; then \
 		echo "🔄 Reloading Herdr config..."; \
 		herdr server reload-config >/dev/null 2>&1 || true; \
 	fi
 
-herdr-diff:
+herdr-global-backup:
+	@if [ -f "$(HERDR_HOME_CONFIG)" ]; then \
+		d=$$(mktemp -d "./.herdr-$$(date +%Y_%m_%d_%H_%M_%S)-XXXX") && cp "$(HERDR_HOME_CONFIG)" "$$d/config.toml" \
+			|| { echo "❌ Herdr backup failed; nothing changed."; exit 1; }; \
+		echo "✅ Backup created at $$d"; \
+	else echo "ℹ️  No existing $(HERDR_HOME_CONFIG) found — skipping backup."; fi
+
+herdr-global-restore:
+	@src=""; for d in $$(ls -td .herdr-*/ 2>/dev/null); do \
+		if [ -f "$${d}config.toml" ]; then src="$${d}config.toml"; break; fi; done; \
+	if [ -z "$$src" ]; then src=$$(ls -t "$(HERDR_HOME_DIR)"/config.toml.backup_* 2>/dev/null | head -n 1); fi; \
+	if [ -z "$$src" ]; then echo "❌ No backups found. Cannot restore."; exit 1; fi; \
+	mkdir -p "$(HERDR_HOME_DIR)" && cp "$$src" "$(HERDR_HOME_CONFIG)" || { echo "❌ Restore failed from $$src"; exit 1; }; \
+	echo "✅ Restore complete from $$src"; \
+	if command -v herdr >/dev/null 2>&1; then herdr server reload-config >/dev/null 2>&1 || true; fi
+
+herdr-global-diff:
 	@echo "📊 Comparing Herdr configurations..."
 	@echo "=== config.toml ==="
 	@diff -u "$(HERDR_HOME_CONFIG)" "$(HERDR_REPO_CONFIG)" 2>/dev/null || echo "(files differ or missing)"
@@ -547,147 +486,36 @@ herdr-diff:
 	else \
 		echo "(script directories differ or missing)"; \
 	fi
+	@if diff -q "$(HERDR_HOME_CONFIG)" "$(HERDR_REPO_CONFIG)" >/dev/null 2>&1 && \
+		diff -rq "$(HERDR_HOME_DIR)/scripts" "$(HERDR_REPO_DIR)/scripts" >/dev/null 2>&1; then \
+		echo "✅ You are up to date with the configuration! 🎉"; \
+	fi
+
+herdr-remove-backups:
+	@set -- .herdr-*/; \
+	if [ ! -d "$$1" ]; then echo "ℹ️  No Herdr backups found."; exit 0; fi; \
+	if [ ! -t 0 ]; then echo "⚠️  No terminal: nothing deleted. Rerun interactively."; exit 0; fi; \
+	printf "🗑  Delete %s Herdr backup(s)? [y/N] " "$$#"; read -r answer; \
+	case "$$answer" in [yY]|[yY][eE][sS]) ;; *) echo "✅ Aborted — no backups deleted."; exit 0;; esac; \
+	for b in "$$@"; do echo "🗑  $$b"; rm -rf "$$b"; done; echo "✅ Removed Herdr backups."
 
 # ============================================================
 # CONVENIENCE ALIASES
 # ============================================================
 
-sync: doom-sync cursor-sync tmux-sync openclaw-sync opencode-sync herdr-sync
+sync: doom-sync tmux-sync openclaw-sync opencode-sync herdr-global-set
 	@echo "✅ All configurations synced!"
 
-backup: doom-backup cursor-backup tmux-backup openclaw-backup opencode-backup herdr-backup
+backup: doom-backup tmux-backup openclaw-backup opencode-backup herdr-global-backup
 
-restore: doom-restore cursor-restore tmux-restore openclaw-restore opencode-restore herdr-restore
-
-hsync: herdr-sync
-
-hbackup: herdr-backup
-
-hrestore: herdr-restore
-
-hdiff: herdr-diff
+restore: doom-restore tmux-restore openclaw-restore opencode-restore herdr-global-restore
 
 # ============================================================
 # TESTING
 # ============================================================
 
 soft-test:
-	@echo "🧪 Local Testing for CachyOS Setup Scripts"
-	@echo "=========================================="
-	@echo
-	@if ! command -v fish >/dev/null 2>&1; then \
-		echo "❌ Fish shell is not installed"; \
-		echo "💡 Install Fish: sudo pacman -S fish"; \
-		exit 1; \
-	fi
-	@echo "✅ Fish shell found: $$(fish --version)"
-	@echo
-	@failed_count=0; \
-	total_count=0; \
-	\
-	# Test 1: Check if all .fish scripts have shebang \
-	echo "📋 Step 1: Checking shebang lines..."; \
-	echo "-----------------------------------"; \
-	for script in *.fish; do \
-		if [ -f "$$script" ]; then \
-			total_count=$$((total_count + 1)); \
-			if head -n 1 "$$script" | grep -q '#!/usr/bin/env fish'; then \
-				echo "✅ $$script"; \
-			else \
-				echo "❌ $$script - Missing shebang line"; \
-				failed_count=$$((failed_count + 1)); \
-			fi; \
-		fi; \
-	done; \
-	echo; \
-	\
-	# Test 2: Check Fish syntax \
-	echo "📋 Step 2: Validating Fish syntax..."; \
-	echo "-----------------------------------"; \
-	for script in *.fish; do \
-		if [ -f "$$script" ]; then \
-			echo -n "Checking $$script... "; \
-			if fish -n "$$script" 2>/dev/null; then \
-				echo "✅"; \
-			else \
-				echo "❌"; \
-				fish -n "$$script" 2>&1 || true; \
-				failed_count=$$((failed_count + 1)); \
-			fi; \
-		fi; \
-	done; \
-	echo; \
-	\
-	# Test 3: Check executability \
-	echo "📋 Step 3: Checking file permissions..."; \
-	echo "-----------------------------------"; \
-	for script in *.fish; do \
-		if [ -f "$$script" ]; then \
-			if [ -x "$$script" ]; then \
-				echo "✅ $$script is executable"; \
-			else \
-				echo "⚠️  $$script is not executable"; \
-				chmod +x "$$script"; \
-				echo "   → Made executable"; \
-			fi; \
-		fi; \
-	done; \
-	echo; \
-	\
-	# Test 4: Check for required structure \
-	echo "📋 Step 4: Checking script structure..."; \
-	echo "-----------------------------------"; \
-	for script in *.fish; do \
-		if [ -f "$$script" ]; then \
-			has_purpose_or_desc=false; \
-			has_author=false; \
-			has_echo=false; \
-			if grep -q "Purpose:" "$$script" 2>/dev/null || grep -q "Description:" "$$script" 2>/dev/null; then \
-				has_purpose_or_desc=true; \
-			fi; \
-			if grep -q "Author:" "$$script" 2>/dev/null; then \
-				has_author=true; \
-			fi; \
-			if grep -q "echo" "$$script" 2>/dev/null; then \
-				has_echo=true; \
-			fi; \
-			if [ "$$has_purpose_or_desc" = true ] && [ "$$has_author" = true ] && [ "$$has_echo" = true ]; then \
-				echo "✅ $$script has proper structure"; \
-			else \
-				echo "⚠️  $$script - Missing some structure elements"; \
-				if [ "$$has_purpose_or_desc" = false ]; then \
-					echo "   → Missing Purpose/Description"; \
-				fi; \
-				if [ "$$has_author" = false ]; then \
-					echo "   → Missing Author"; \
-				fi; \
-				if [ "$$has_echo" = false ]; then \
-					echo "   → Missing echo statements"; \
-				fi; \
-			fi; \
-		fi; \
-	done; \
-	echo; \
-	\
-	# Summary \
-	echo "=========================================="; \
-	echo "📊 Testing Summary"; \
-	echo "=========================================="; \
-	passed=$$((total_count - failed_count)); \
-	echo "Total scripts: $$total_count"; \
-	echo "Passed: $$passed"; \
-	echo "Failed: $$failed_count"; \
-	if [ $$failed_count -eq 0 ]; then \
-		echo; \
-		echo "🎉 All tests passed!"; \
-		echo "✅ You can safely push to GitHub"; \
-		exit 0; \
-	else \
-		echo; \
-		echo "⚠️  Some tests failed"; \
-		echo "💡 Fix the issues above before pushing"; \
-		exit 1; \
-	fi
+	@bash ./test-local.sh
 
 # ============================================================
 # HELP
@@ -698,13 +526,7 @@ help:
 	@echo "=================================="
 	@echo
 	@echo "ALL:"
-	@echo "  make all              Sync Doom Emacs, Cursor, and opencode configs"
-	@echo
-	@echo "CURSOR IDE:"
-	@echo "  make cursor-sync      Backup and sync Cursor settings/keybindings"
-	@echo "  make cursor-backup    Backup current Cursor config"
-	@echo "  make cursor-restore   Restore most recent Cursor backup"
-	@echo "  make cursor-diff      Show differences between repo and installed"
+	@echo "  make all              Sync Doom Emacs and opencode configs"
 	@echo
 	@echo "DOOM EMACS:"
 	@echo "  make doom-sync        Backup and sync Doom Emacs config"
@@ -742,20 +564,18 @@ help:
 	@echo "  make mermaid-check     Validate Mermaid diagrams with Mermaid CLI"
 	@echo
 	@echo "HERDR:"
-	@echo "  make herdr-backup     Backup current ~/.config/herdr/config.toml"
-	@echo "  make herdr-sync       Deploy Herdr config and Fish helpers (with backup)"
-	@echo "  make herdr-restore    Restore most recent Herdr config backup"
-	@echo "  make herdr-diff       Show differences between repo and installed Herdr config"
-	@echo "  make hsync            Alias for herdr-sync"
-	@echo "  make hbackup          Alias for herdr-backup"
-	@echo "  make hrestore         Alias for herdr-restore"
-	@echo "  make hdiff            Alias for herdr-diff"
+	@echo "  make herdr-global-set      Deploy Herdr config and Fish helpers (with backup)"
+	@echo "  make herdr-global-unset    Remove ~/.config/herdr/config.toml (with backup)"
+	@echo "  make herdr-global-backup   Backup ~/.config/herdr/config.toml to ./.herdr-<timestamp>/"
+	@echo "  make herdr-global-restore  Restore the most recent Herdr config backup"
+	@echo "  make herdr-global-diff     Show differences between repo and installed Herdr config"
+	@echo "  make herdr-remove-backups  Delete ./.herdr-* backups (asks first)"
 	@echo
 	@echo "TESTING:"
-	@echo "  make soft-test        Validate Fish scripts (syntax, structure)"
+	@echo "  make soft-test        Validate Fish scripts (syntax, structure, README catalog, rerun safety)"
 	@echo
 	@echo "SHORTCUTS:"
-	@echo "  make sync             Sync all configs (Doom, Cursor, Tmux, OpenClaw, opencode)"
+	@echo "  make sync             Sync all configs (Doom, Tmux, OpenClaw, opencode)"
 	@echo "  make backup           Backup all configs"
 	@echo "  make restore          Restore all from most recent backups"
 	@echo

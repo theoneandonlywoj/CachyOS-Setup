@@ -6,26 +6,7 @@
 
 echo "🚀 Starting kubectl installation..."
 
-# === 1. Check if kubectl is already installed ===
-command -q kubectl; and set -l kubectl_installed "installed"
-if test -n "$kubectl_installed"
-    echo "✅ kubectl is already installed."
-    kubectl version --client --short 2>&1 | head -n 1
-    read -P "Do you want to reinstall? [y/N] " reinstall
-    if test "$reinstall" != "y" -a "$reinstall" != "Y"
-        echo "⚠ Skipping kubectl installation."
-        exit 0
-    end
-    echo "📦 Removing existing kubectl installation..."
-    sudo pacman -R --noconfirm kubectl
-    if test $status -ne 0
-        echo "❌ Failed to remove kubectl."
-        exit 1
-    end
-    echo "✅ kubectl removed."
-end
-
-# === 2. Install kubectl ===
+# === 1. Install kubectl ===
 echo "📦 Installing kubectl..."
 sudo pacman -S --needed --noconfirm kubectl
 if test $status -ne 0
@@ -34,13 +15,16 @@ if test $status -ne 0
 end
 echo "✅ kubectl installed."
 
-# === 3. Install optional kubectl tools ===
+# === 2. Install optional kubectl tools ===
 echo "📦 Installing optional kubectl tools..."
 echo "💡 The following tools enhance kubectl capabilities:"
 echo "   - krew: Kubectl plugin manager"
 echo "   - kubectx: Switch between Kubernetes contexts and namespaces"
 echo "   - kubectl-cert-manager: Certificate management plugin"
-read -P "Do you want to install optional kubectl tools? [y/N] " install_tools
+set -l install_tools
+if test -t 0
+    read -P "Do you want to install optional kubectl tools? [y/N] " install_tools
+end
 
 if test "$install_tools" = "y" -o "$install_tools" = "Y"
     echo "📦 Installing kubectl tools..."
@@ -52,7 +36,7 @@ if test "$install_tools" = "y" -o "$install_tools" = "Y"
     end
 end
 
-# === 4. Setup kubectl autocomplete ===
+# === 3. Setup kubectl autocomplete ===
 echo "📦 Setting up kubectl shell completion..."
 if command -q kubectl
     # Fish shell autocompletion
@@ -64,7 +48,7 @@ if command -q kubectl
     end
 end
 
-# === 5. Check and fix snapper Boost library issue (if present) ===
+# === 4. Check and fix snapper Boost library issue (if present) ===
 if test -f /usr/bin/snapper
     echo
     echo "🔧 Checking for snapper Boost library issue..."
@@ -72,11 +56,14 @@ if test -f /usr/bin/snapper
     if test $status -ne 0
         echo "⚠ Detected snapper Boost library version mismatch."
         echo "💡 This can happen after Boost updates."
-        read -P "Do you want to fix snapper? [y/N] " fix_snapper
+        set -l fix_snapper
+        if test -t 0
+            read -P "Do you want to fix snapper? [y/N] " fix_snapper
+        end
         
         if test "$fix_snapper" = "y" -o "$fix_snapper" = "Y"
-            echo "📦 Reinstalling snapper to fix Boost library version mismatch..."
-            sudo pacman -S --noconfirm snapper
+            echo "📦 Updating snapper to fix Boost library version mismatch..."
+            sudo pacman -S --needed --noconfirm snapper
             if test $status -eq 0
                 echo "✅ Snapper fixed successfully."
             else
@@ -88,7 +75,7 @@ if test -f /usr/bin/snapper
     end
 end
 
-# === 6. Verify installation ===
+# === 5. Verify installation ===
 echo
 echo "🧪 Verifying installation..."
 command -q kubectl

@@ -7,21 +7,11 @@
 echo "🚀 Starting Podman and Docker Compose installation..."
 
 # === 0. Check if Docker is installed ===
-set -l docker_installed (pacman -Qq docker ^/dev/null)
+# Match the exact name: podman-docker provides docker, so -Qq docker also finds it.
+set -l docker_installed (pacman -Qq docker 2>/dev/null | string match docker)
 if test -n "$docker_installed"
-    echo "⚠ Docker is currently installed. podman-docker will conflict with it."
-    echo "   You must remove Docker to install podman-docker for docker CLI replacement."
-    read -P "Do you want to remove Docker? [y/N] " remove_docker
-    if test "$remove_docker" = "y" -o "$remove_docker" = "Y"
-        sudo pacman -R --noconfirm docker
-        if test $status -ne 0
-            echo "❌ Failed to remove Docker. Aborting."
-            exit 1
-        end
-        echo "✅ Docker removed."
-    else
-        echo "ℹ Skipping podman-docker installation. You can still use Podman, but 'docker' CLI will not point to Podman."
-    end
+    echo "⚠️  docker is installed, podman-docker was skipped. To switch: sudo pacman -R docker"  # rerun-gate: allow hint text
+    echo "ℹ Skipping podman-docker installation. You can still use Podman, but 'docker' CLI will not point to Podman."
 end
 
 # === 1. Install Podman ===
@@ -33,8 +23,8 @@ if test $status -ne 0
 end
 echo "✅ Podman installed."
 
-# === 2. Install podman-docker if Docker was removed ===
-if not test -n "$docker_installed" -o "$remove_docker" = "y"
+# === 2. Install podman-docker unless Docker is installed ===
+if test -z "$docker_installed"
     echo "📦 Installing podman-docker wrapper..."
     sudo pacman -S --needed --noconfirm podman-docker
     if test $status -ne 0
@@ -98,7 +88,7 @@ docker-compose version
 
 echo
 echo "✅ Podman and Docker Compose installation complete!"
-if test -n "$docker_installed" -a "$remove_docker" != "y"
+if test -n "$docker_installed"
     echo "💡 Docker CLI still points to Docker. podman-docker was skipped due to conflict."
 else
     echo "💡 Docker CLI now points to Podman via function alias."

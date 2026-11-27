@@ -13,39 +13,7 @@ echo "   - Rootless container support"
 echo "   - Great for Podman users"
 echo
 
-# === 1. Check if podman-compose is already installed ===
-command -q podman-compose; and set -l podman_compose_installed "installed"
-if test -n "$podman_compose_installed"
-    echo "✅ podman-compose is already installed."
-    podman-compose --version 2>&1 | head -n 1
-    read -P "Do you want to reinstall? [y/N] " reinstall
-    if test "$reinstall" != "y" -a "$reinstall" != "Y"
-        echo "⚠ Skipping podman-compose installation."
-        exit 0
-    end
-    echo "📦 Removing existing podman-compose installation..."
-    # Try to remove via pacman
-    if pacman -Qq podman-compose > /dev/null 2>&1
-        sudo pacman -R --noconfirm podman-compose
-    end
-    # Try to remove via pip
-    if command -v pip > /dev/null
-        pip uninstall -y podman-compose 2>/dev/null
-    end
-    if command -v pip3 > /dev/null
-        pip3 uninstall -y podman-compose 2>/dev/null
-    end
-    # Remove manually installed script
-    if test -f /usr/local/bin/podman-compose
-        sudo rm -f /usr/local/bin/podman-compose
-    end
-    if test -f ~/.local/bin/podman-compose
-        rm -f ~/.local/bin/podman-compose
-    end
-    echo "✅ podman-compose removed."
-end
-
-# === 2. Check if Podman is installed ===
+# === 1. Check if Podman is installed ===
 if not command -q podman
     echo "⚠ Podman is not installed."
     echo "💡 podman-compose requires Podman to function."
@@ -66,7 +34,7 @@ else
     echo "✅ Podman is already installed."
 end
 
-# === 3. Install from official repository (preferred) ===
+# === 2. Install from official repository (preferred) ===
 echo "📦 Checking official repository for podman-compose..."
 if pacman -Si podman-compose > /dev/null 2>&1
     echo "📦 Installing podman-compose from official Arch repository..."
@@ -81,7 +49,7 @@ else
     echo "ℹ podman-compose not found in official repository."
 end
 
-# === 4. Fallback: Install via pip ===
+# === 3. Fallback: Install via pip ===
 if not set -q podman_compose_installed_via_pacman
     if command -q pip3
         echo "📦 Installing podman-compose via pip3..."
@@ -116,8 +84,8 @@ if not set -q podman_compose_installed_via_pacman
     end
 end
 
-# === 5. Fallback: Install from GitHub ===
-if not set -q podman_compose_installed_via_pacman -a not set -q podman_compose_installed_via_pip
+# === 4. Fallback: Install from GitHub ===
+if not set -q podman_compose_installed_via_pacman; and not set -q podman_compose_installed_via_pip
     echo "📥 Installing podman-compose from GitHub..."
     
     echo "📦 Downloading podman-compose script..."
@@ -132,7 +100,7 @@ if not set -q podman_compose_installed_via_pacman -a not set -q podman_compose_i
     end
 end
 
-# === 6. Verify installation ===
+# === 5. Verify installation ===
 echo
 echo "🧪 Verifying installation..."
 

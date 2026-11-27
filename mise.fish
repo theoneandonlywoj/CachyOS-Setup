@@ -59,7 +59,23 @@ else
     echo "ℹ Mise initialization already present in Fish config."
 end
 
-# === 5. Verify installation ===
+# === 5. Put Mise shims on the Fish PATH ===
+# Installers run as child scripts and cannot change the PATH of the terminal
+# that started them, and config.fish only runs at startup. Universal fish
+# variables reach every running fish session at once, so tools installed later
+# with 'mise use -g' work in open terminals without starting a new one.
+set mise_shims "$HOME/.local/share/mise/shims"
+mkdir -p "$mise_shims"
+if not contains -- "$mise_shims" $fish_user_paths
+    fish_add_path -U "$mise_shims"
+    if test $status -ne 0
+        echo "❌ Failed to add $mise_shims to the Fish PATH."
+        exit 1
+    end
+    echo "✅ Added Mise shims to the Fish PATH"
+end
+
+# === 6. Verify installation ===
 echo "🧪 Verifying Mise installation..."
 if command -v mise > /dev/null
     echo "✅ Mise installed successfully: $(mise --version)"

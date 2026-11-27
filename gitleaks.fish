@@ -247,14 +247,6 @@ end
 echo
 echo "🎉 gitleaks installation complete!"
 echo
-echo "💡 Important:"
-if set -q gitleaks_installed_via_mise
-    echo "   To use 'gitleaks' in this terminal immediately,"
-    echo "   run the following command in your current shell:"
-    echo "       mise activate fish | source"
-    echo "   In future terminals, this will happen automatically thanks to the config file update."
-end
-echo
 echo "📚 Installed version: $GITLEAKS_VERSION"
 echo
 echo "💡 Basic usage:"

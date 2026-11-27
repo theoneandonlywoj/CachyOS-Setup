@@ -94,12 +94,6 @@ end
 echo
 echo "🎉 Playwright CLI setup complete via Mise!"
 echo
-echo "💡 Important:"
-echo "   To use 'playwright-cli' in this terminal immediately,"
-echo "   run the following command in your current shell:"
-echo "       mise activate fish | source"
-echo "   In future terminals, this will happen automatically thanks to the config file update."
-echo
 echo "💡 Quick start:"
 echo "   playwright-cli open https://example.com"
 echo "   playwright-cli snapshot"

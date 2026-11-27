@@ -86,12 +86,6 @@ end
 echo
 echo "🎉 Redis CLI setup complete!"
 echo
-echo "💡 Important:"
-echo "   To use 'redis-cli' in this terminal immediately,"
-echo "   run the following command in your current shell:"
-echo "       mise activate fish | source"
-echo "   In future terminals, this will happen automatically thanks to the config file update."
-echo
 echo "📚 Installed version: $REDIS_VERSION (via Mise)"
 echo
 echo "💡 Basic usage:"

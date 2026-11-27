@@ -208,12 +208,6 @@ echo
 echo "🎉 Kafka CLI setup complete!"
 echo
 if set -q kafka_installed_via_mise
-    echo "💡 Important:"
-    echo "   To use Kafka CLI tools in this terminal immediately,"
-    echo "   run the following command in your current shell:"
-    echo "       mise activate fish | source"
-    echo "   In future terminals, this will happen automatically thanks to the config file update."
-    echo
     echo "📚 Installed version: $KAFKA_VERSION (via Mise)"
 else
     echo "💡 Important:"
